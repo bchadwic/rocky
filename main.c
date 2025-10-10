@@ -22,6 +22,7 @@ int main(void) {
     // create stun packet
     uint8_t buf[20] = { 0 }; 
     if (stun(buf) == -1) {
+        close(fd);
         fprintf(stderr, "stun: Could not create a request");
         return 1;
     }
