@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "*.go": "go",
+        "random.h": "c"
+    }
+}
