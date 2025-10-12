@@ -1,4 +1,7 @@
+# settings
+.vscode/**
+
+# compile files
+a.out
 rocky
 **.o
-
-.vscode/**

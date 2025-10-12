@@ -10,6 +10,8 @@
 #include <sys/random.h>
 #include <netdb.h>
 #include <sys/time.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include "../include/stun.h"
 
 static int stununpack(uint8_t *resp, ssize_t n, stun_message_t *msg)
@@ -93,22 +95,26 @@ static int stunsend(int fd, uint8_t *req, size_t n, const char *hostname)
 {
   struct hostent *host = gethostbyname(hostname);
   char **addr_list = host->h_addr_list;
+  if (host == NULL || host->h_addr_list == NULL)
+  {
+    return -1;
+  }
 
   // retry logic for multiple ip addresses
-  uint8_t sent = 0;
+  bool sent = false;
   while (!sent && *addr_list != NULL)
   {
     struct in_addr addr;
-    memcpy(&addr, *addr_list, host->h_length);
+    memcpy(&addr, *addr_list, sizeof(struct in_addr));
 
     struct sockaddr_in dst = {0};
     dst.sin_family = AF_INET;
     dst.sin_addr = addr;
-    dst.sin_port = htons(19302);
+    dst.sin_port = htons(STUN_PORT);
 
     if (sendto(fd, req, n, 0, (struct sockaddr *)&dst, sizeof(dst)) != -1)
     {
-      sent = 1;
+      sent = true;
     }
     addr_list++;
   }
@@ -124,13 +130,15 @@ static int stunpack(uint8_t *buf, size_t n, const stun_message_t *msg)
 {
   if (n < STUN_REQUEST_SIZE)
   {
-    errno = ENOMEM;
+    errno = EINVAL;
     return -1;
   }
   memset(buf, 0, n);
 
-  memcpy(buf, &msg->type, sizeof(msg->type));
-  memcpy(buf + 2, &msg->len, sizeof(msg->len));
+  uint16_t type = htons(msg->type);
+  uint16_t len = htons(msg->len);
+  memcpy(buf, &type, sizeof(type));
+  memcpy(buf + 2, &len, sizeof(len));
 
   uint32_t magic_cookie = htonl(STUN_MAGIC_COOKIE);
   memcpy(buf + 4, &magic_cookie, sizeof(magic_cookie));
@@ -177,73 +185,3 @@ int stun(int fd, stun_message_t *msg)
 
   return 0;
 }
-
-// int stun_pack(uint8_t *buf)
-// {
-
-//   uint16_t message_type = htons(0x0001);
-//   uint16_t message_length = htons(0x0000);
-//   uint32_t magic_cookie = htonl(0x2112A442);
-
-//   uint8_t transaction_identifier[12];
-//   if (getrandom(transaction_identifier, sizeof(transaction_identifier), 0) != sizeof(transaction_identifier))
-//   {
-//     return -1;
-//   }
-
-//   memcpy(buf, &message_type, sizeof(message_type));
-//   memcpy(buf + 2, &message_length, sizeof(message_length));
-//   memcpy(buf + 4, &magic_cookie, sizeof(magic_cookie));
-//   memcpy(buf + 8, &transaction_identifier, sizeof(transaction_identifier));
-//   return 0;
-// }
-
-/*
-
-  // timeout
-
-  // discard first byte
-  uint8_t family = reply[1];
-  if (family == 0x01)
-  {
-    printf("ipv4\n");
-  }
-  else
-  {
-    // don't support ipv6 yet
-    fprintf(stderr, "unsupported ipv6\n");
-    close(fd);
-    return 1;
-  }
-
-  uint16_t message_type = (reply[0] << 8) | reply[1];
-  if (message_type != 0x0101)
-  {
-    fprintf(stderr, "response was not successful, need to handle error\n");
-    close(fd);
-    return 1;
-  }
-
-  for (int i = 0; i < received; i++)
-  {
-    if (i % 4 == 0)
-      printf("\n");
-    printf("%#04x   ", reply[i]);
-  }
-  printf("\n");
-
-  uint32_t magic_cookie = 0x2112A442;
-  uint32_t reply_cookie;
-  memcpy(&reply_cookie, reply + 4, sizeof(magic_cookie));
-
-  if (ntohl(reply_cookie) != magic_cookie)
-  {
-
-    fprintf(stderr, "reply cookie did not match magic cookie\n");
-    close(fd);
-    return 1;
-  }
-
-  close(fd);
-
-*/
