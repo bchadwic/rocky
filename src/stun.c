@@ -153,7 +153,7 @@ static int stuninit(stun_message_t *msg)
   return getrandom(msg->transaction_identifier, sizeof(msg->transaction_identifier), 0);
 }
 
-int stun(int fd, stun_message_t *msg)
+int getpublicaddress(int fd, stun_message_t *msg)
 {
   if (stuninit(msg) == -1)
   {

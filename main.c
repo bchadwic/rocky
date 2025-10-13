@@ -11,41 +11,53 @@
 #include <sys/time.h>
 #include "../include/stun.h"
 
-int getpublicaddress(stun_message_t *msg)
+int rocky(int fd)
 {
-    int fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-    if (fd == -1)
-    {
-        return 1;
-    }
-
     struct sockaddr_in local = {0};
     local.sin_family = AF_INET;
     local.sin_addr.s_addr = INADDR_ANY;
     local.sin_port = htons(ROCKY_PORT);
 
-    if (bind(fd, (struct sockaddr *)&local, sizeof(local)) == -1)
-    {
-        close(fd);
-        return 1;
-    }
+    // if (bind(fd, (struct sockaddr *)&local, sizeof(local)) == -1)
+    // {
+    //     return -1;
+    // }
 
-    int res = stun(fd, msg);
-    close(fd);
-    return res;
+    // stun_message_t msg;
+    // if (getpublicaddress(fd, &msg) == -1)
+    // {
+    //     return -1;
+    // }
+
+    // struct in_addr host_addr;
+    // host_addr.s_addr = htonl(msg.ip_addr);
+    // uint32_t host_port = htons(msg.port);
+    // printf("host %s:%d\n", inet_ntoa(host_addr), host_port);
+
+    printf("host: 174.61.173.64:17390\n");
+
+    char peer[100];
+    printf("peer: ");
+    scanf("%s", peer);
+
+    return 0;
 }
 
 int main(void)
 {
-    stun_message_t msg;
-    if (getpublicaddress(&msg) == -1)
+    int fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (fd == -1)
     {
-        perror("getpublicaddress");
-        return 1;
+        return -1;
     }
 
-    struct in_addr addr;
-    addr.s_addr = htonl(msg.ip_addr);
-    uint32_t port = htons(msg.port);
-    printf("addr: %s, port: %d\n", inet_ntoa(addr), port);
+    int res = rocky(fd);
+    close(fd);
+
+    if (res == -1)
+    {
+        perror("run");
+        return 1;
+    }
+    return 0;
 }

@@ -42,6 +42,6 @@ typedef struct
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 */
-int stun(int fd, stun_message_t *msg);
+int getpublicaddress(int fd, stun_message_t *msg);
 
 #endif
