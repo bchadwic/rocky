@@ -1,32 +1,45 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <string.h>
 
+#define SOCKET_ADDR_INPUT_SIZE 21
+#define MAX_IP_INPUT_SIZE 16
+#define MAX_PORT_INPUT_SIZE 5
+
 int getpeeraddress(struct sockaddr_in *addr)
 {
     printf("peer: ");
-    char in[32];
-    if (!fgets(in, sizeof(in), stdin))
+    char buf[SOCKET_ADDR_INPUT_SIZE + 1] = {0};
+    if (fgets(buf, sizeof(buf), stdin) == NULL)
     {
         return -1;
     }
-    in[strcspn(in, "\n")] = 0;
+
+    char *colon = strchr(buf, ':');
+    if (!colon)
+    {
+        return -1; // TODO; create custom error code
+    }
 
     char ip[16];
-    int port;
-    if (sscanf(in, "%15[^:]:%d", ip, &port) != 1)
-    {
-        return -1;
-    }
+    char port[6];
 
-    if (port < 1 || port > 65535)
-    {
-        return -1;
-    }
+    size_t n = colon - buf;
+    strncpy(ip, buf, n);
+    ip[n] = '\0';
+
+    strncpy(port, colon + 1, sizeof(port) - 1);
+    port[sizeof(port) - 1] = '\0';
 
     addr->sin_family = AF_INET;
-    addr->sin_port = htons(port);
+    addr->sin_port = htons(atoi(port));
+    if (addr->sin_port == 0)
+    {
+        return -1; // TODO; create custom error code
+    }
+
     if (inet_pton(AF_INET, ip, &addr->sin_addr.s_addr) != 1)
     {
         return -1;
