@@ -9,6 +9,8 @@
 #include <sys/random.h>
 #include <netdb.h>
 #include <sys/time.h>
+#include <stdbool.h>
+#include <sys/time.h>
 #include "../include/stun.h"
 #include "../include/peer.h"
 
@@ -36,6 +38,40 @@ int rocky(int fd)
     {
         return -1;
     }
+
+    fd_set readfds;
+    char buf[1024];
+
+    bool connected = false;
+    while (!connected)
+    {
+        char *ping = "ping";
+        sendto(fd, ping, sizeof(ping), 0, (struct sockaddr *)&peer_addr, sizeof(peer_addr));
+        printf("ping sent\n");
+
+        FD_ZERO(&readfds);
+        FD_SET(fd, &readfds);
+
+        struct timeval timeout = {.tv_sec = 5, .tv_usec = 0};
+        int ready = select(fd + 1, &readfds, NULL, NULL, &timeout);
+        if (ready > 0 && FD_ISSET(fd, &readfds))
+        {
+            struct sockaddr_in from;
+            socklen_t fromlen = sizeof(from);
+            ssize_t len = recvfrom(fd, buf, sizeof(buf) - 1, 0, (struct sockaddr *)&from, &fromlen);
+            if (len > 0)
+            {
+                buf[len] = '\0';
+                printf("Received from %s:%d → %s\n", inet_ntoa(from.sin_addr), ntohs(from.sin_port), buf);
+                connected = true;
+            }
+        }
+        else
+        {
+            printf("no response, retrying...\n");
+            sleep(1);
+        }
+    }
     return 0;
 }
 
@@ -52,7 +88,7 @@ int main(void)
 
     if (res == -1)
     {
-        perror("run");
+        perror("failed");
         return 1;
     }
     return 0;
