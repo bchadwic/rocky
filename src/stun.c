@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include "../include/stun.h"
 
-static int stununpack(uint8_t *resp, ssize_t n, stun_message_t *msg)
+static int stununpack(uint8_t *resp, ssize_t n, struct stun_message_t *msg)
 {
   if (!resp || !msg || n < 20)
     return -1; // too short
@@ -126,7 +126,7 @@ static int stunsend(int fd, uint8_t *req, size_t n, const char *hostname)
   return 0;
 }
 
-static int stunpack(uint8_t *buf, size_t n, const stun_message_t *msg)
+static int stunpack(uint8_t *buf, size_t n, const struct stun_message_t *msg)
 {
   if (n < STUN_REQUEST_SIZE)
   {
@@ -146,22 +146,23 @@ static int stunpack(uint8_t *buf, size_t n, const stun_message_t *msg)
   return 0;
 }
 
-static int stuninit(stun_message_t *msg)
+static int stuninit(struct stun_message_t *msg)
 {
   msg->type = STUN_REQUEST;
   msg->len = 0x0000;
   return getrandom(msg->transaction_identifier, sizeof(msg->transaction_identifier), 0);
 }
 
-int getpublicaddress(int fd, stun_message_t *msg)
+int getpublicaddress(int fd, struct sockaddr_in *public_addr)
 {
-  if (stuninit(msg) == -1)
+  struct stun_message_t msg = { 0 };
+  if (stuninit(&msg) == -1)
   {
     return -1;
   }
 
-  uint8_t req[STUN_REQUEST_SIZE] = {0};
-  if (stunpack(req, sizeof(req), msg) == -1)
+  uint8_t req[STUN_REQUEST_SIZE] = { 0 };
+  if (stunpack(req, sizeof(req), &msg) == -1)
   {
     return -1;
   }
@@ -171,17 +172,21 @@ int getpublicaddress(int fd, stun_message_t *msg)
     return -1;
   }
 
-  uint8_t resp[STUN_RESPONSE_SIZE] = {0};
+  uint8_t resp[STUN_RESPONSE_SIZE] = { 0 };
   ssize_t n = stunrecv(fd, resp, sizeof(resp));
   if (n == -1)
   {
     return -1;
   }
 
-  if (stununpack(resp, n, msg) == -1)
+  if (stununpack(resp, n, &msg) == -1)
   {
     return -1;
   }
 
+  // TODO; support ipv6
+  public_addr->sin_family = AF_INET;
+  public_addr->sin_port = htons(msg.port);
+  public_addr->sin_addr.s_addr = htonl(msg.ip_addr);
   return 0;
 }

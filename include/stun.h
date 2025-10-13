@@ -1,7 +1,7 @@
 #ifndef STUN_H
 #define STUN_H
 
-#include <sys/types.h>
+#include <inttypes.h>
 
 #define ROCKY_PORT 60357
 #define STUN_PORT 19302
@@ -17,7 +17,7 @@
 #define STUN_MAGIC_COOKIE 0x2112A442
 #define STUN_ATTR_XOR_MAPPED_ADDRESS 0x0020
 
-typedef struct
+struct stun_message_t
 {
   // req
   uint16_t type;
@@ -27,7 +27,7 @@ typedef struct
   // resp
   uint16_t port;
   uint32_t ip_addr;
-} stun_message_t;
+};
 
 /*
  0                   1                   2                   3
@@ -42,6 +42,6 @@ typedef struct
 |                                                               |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 */
-int getpublicaddress(int fd, stun_message_t *msg);
+int getpublicaddress(int fd, struct sockaddr_in *addr);
 
 #endif
