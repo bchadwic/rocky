@@ -26,7 +26,7 @@ int holepunch(int fd, struct sockaddr_in *peer_addr)
     // Punch NAT: send a few packets immediately
     for (int i = 0; i < 5; i++)
     {
-        sendto(fd, ping, strlen(ping), 0, (struct sockaddr *)&peer_addr, sizeof(peer_addr));
+        sendto(fd, ping, strlen(ping), 0, (struct sockaddr *)peer_addr, sizeof(*peer_addr));
         printf("packet %d sent\n", i);
         struct timespec ts = {.tv_sec = 0, .tv_nsec = RAPID_INTERVAL};
         if (nanosleep(&ts, NULL) == -1)
@@ -38,7 +38,7 @@ int holepunch(int fd, struct sockaddr_in *peer_addr)
     while (!connected)
     {
         // Send a keepalive packet every loop iteration
-        sendto(fd, ping, strlen(ping), 0, (struct sockaddr *)&peer_addr, sizeof(peer_addr));
+        sendto(fd, ping, strlen(ping), 0, (struct sockaddr *)peer_addr, sizeof(*peer_addr));
 
         FD_ZERO(&readfds);
         FD_SET(fd, &readfds);
