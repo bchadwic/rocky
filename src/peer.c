@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <string.h>
+#include "../include/peer.h"
 
 #define SOCKET_ADDR_INPUT_SIZE 21
 #define MAX_IP_INPUT_SIZE 16

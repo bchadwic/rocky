@@ -155,13 +155,13 @@ static int stuninit(struct stun_message_t *msg)
 
 int getpublicaddress(int fd, struct sockaddr_in *public_addr)
 {
-  struct stun_message_t msg = { 0 };
+  struct stun_message_t msg = {0};
   if (stuninit(&msg) == -1)
   {
     return -1;
   }
 
-  uint8_t req[STUN_REQUEST_SIZE] = { 0 };
+  uint8_t req[STUN_REQUEST_SIZE] = {0};
   if (stunpack(req, sizeof(req), &msg) == -1)
   {
     return -1;
@@ -172,7 +172,7 @@ int getpublicaddress(int fd, struct sockaddr_in *public_addr)
     return -1;
   }
 
-  uint8_t resp[STUN_RESPONSE_SIZE] = { 0 };
+  uint8_t resp[STUN_RESPONSE_SIZE] = {0};
   ssize_t n = stunrecv(fd, resp, sizeof(resp));
   if (n == -1)
   {
