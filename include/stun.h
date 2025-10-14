@@ -2,6 +2,7 @@
 #define STUN_H
 
 #include <inttypes.h>
+#include <netinet/in.h>
 
 #define ROCKY_PORT 60357
 #define STUN_PORT 19302

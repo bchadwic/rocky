@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <string.h>
+#include "../include/peer.h"
 
 #define SOCKET_ADDR_INPUT_SIZE 21
 #define MAX_IP_INPUT_SIZE 16
@@ -34,7 +34,7 @@ int getpeeraddress(struct sockaddr_in *addr)
     port[sizeof(port) - 1] = '\0';
 
     addr->sin_family = AF_INET;
-    addr->sin_port = htons(atoi(port));
+    addr->sin_port = atoi(port);
     if (addr->sin_port == 0)
     {
         return -1; // TODO; create custom error code
