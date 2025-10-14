@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <arpa/inet.h>
 #include "../include/peer.h"
 
 #define SOCKET_ADDR_INPUT_SIZE 21

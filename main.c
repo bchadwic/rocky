@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include "../include/stun.h"
 #include "../include/peer.h"
+#include "../include/holepunch.h"
 
 int rocky(int fd)
 {
@@ -25,6 +26,11 @@ int rocky(int fd)
 
     struct sockaddr_in peer_addr = {0};
     if (getpeeraddress(&peer_addr) == -1)
+    {
+        return -1;
+    }
+
+    if (holepunch(fd, &peer_addr) == -1)
     {
         return -1;
     }
