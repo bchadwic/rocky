@@ -38,6 +38,7 @@ int rocky(int fd)
     {
         return -1;
     }
+    printf("peer: %s:%d\n", inet_ntoa(peer_addr.sin_addr), peer_addr.sin_port);
 
     fd_set readfds;
     char buf[1024];
