@@ -46,7 +46,7 @@ int rocky(int fd)
     while (!connected)
     {
         char *ping = "ping";
-        sendto(fd, ping, sizeof(ping), 0, (struct sockaddr *)&peer_addr, sizeof(peer_addr));
+        sendto(fd, ping, strlen(ping), 0, (struct sockaddr *)&peer_addr, sizeof(peer_addr));
         printf("ping sent\n");
 
         FD_ZERO(&readfds);
