@@ -79,7 +79,7 @@ int rocky(int fd)
     for (int i = 0; i < 5; i++)
     {
         sendto(fd, ping, strlen(ping), 0, (struct sockaddr *)&peer_addr, sizeof(peer_addr));
-        usleep(200000); // 200ms
+        sleep(1);
     }
 
     while (!connected)
@@ -108,10 +108,10 @@ int rocky(int fd)
         else
         {
             printf("no response, retrying...\n");
-            usleep(500000); // 500ms pause before next keepalive
+            sleep(1);
         }
-        return 0;
     }
+    return 0;
 }
 
 int main(void)
