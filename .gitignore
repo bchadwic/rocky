@@ -1,2 +1,7 @@
-a.out
+# settings
 .vscode/**
+
+# compile files
+a.out
+rocky
+**.o
