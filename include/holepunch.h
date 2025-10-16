@@ -3,11 +3,10 @@
 
 #include <netinet/in.h>
 
+#define BURST_COUNT 3
+#define CONNECT_TIMEOUT 3        // 3s
 #define RAPID_INTERVAL 10000000  // 10ms
 #define RETRY_INTERVAL 200000000 // 200ms
-
-// const char *PING = "ping";
-// const size_t PING_SIZE = 4;
 
 int holepunch(int fd, struct sockaddr_in *peer_addr);
 
