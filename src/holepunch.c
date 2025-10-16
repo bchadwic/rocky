@@ -105,35 +105,3 @@ int holepunch(int fd, struct sockaddr_in *peer_addr)
     }
     return 0;
 }
-
-// FD_ZERO(&readfds);
-// FD_SET(fd, &readfds);
-
-// struct timeval timeout = {.tv_sec = 5, .tv_usec = 0};
-// // int ready = ;
-// switch(select(fd + 1, &readfds, NULL, NULL, &timeout)){
-//     case 3:
-
-// }
-
-// if (ready > 0 && FD_ISSET(fd, &readfds))
-// {
-//     struct sockaddr_in from;
-//     socklen_t fromlen = sizeof(from);
-//     ssize_t len = recvfrom(fd, buf, sizeof(buf) - 1, 0, (struct sockaddr *)&from, &fromlen);
-//     if (len > 0)
-//     {
-//         buf[len] = '\0';
-//         printf("Received from %s:%d → %s\n", inet_ntoa(from.sin_addr), ntohs(from.sin_port), buf);
-//         connected = true;
-//     }
-// }
-// else
-// {
-//     printf("no response, retrying...\n");
-//     struct timespec ts = {.tv_sec = 0, .tv_nsec = RETRY_INTERVAL};
-//     if (nanosleep(&ts, NULL) == -1)
-//     {
-//         return -1;
-//     }
-// }
