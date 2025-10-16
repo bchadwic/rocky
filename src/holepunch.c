@@ -41,7 +41,7 @@ static int burst(int fd, struct sockaddr_in *peer_addr)
 
 static int tryconnect(int fd, struct sockaddr_in *peer_addr)
 {
-    // this represents which address and port our peer will communicate to us with
+    // represents the actual address and port our peer will send us traffic from
     struct sockaddr_in actual_peer_addr;
     socklen_t addr_len = sizeof(actual_peer_addr);
     char buf[512] = {0};
