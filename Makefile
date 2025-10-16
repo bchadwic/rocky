@@ -2,7 +2,7 @@ CC := gcc
 CFLAGS := -Wall -Wextra -std=c11 -Iinclude
 LDFLAGS :=
 
-SRC := src/peer.c src/stun.c main.c
+SRC := src/holepunch.c src/peer.c src/stun.c main.c
 OBJ := $(SRC:.c=.o)
 
 TARGET := rocky
