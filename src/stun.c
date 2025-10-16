@@ -167,6 +167,8 @@ int getpublicaddress(int fd, struct sockaddr_in *public_addr)
     return -1;
   }
 
+  printf(STUN_HOSTNAME);
+  printf("\n");
   if (stunsend(fd, req, sizeof(req), STUN_HOSTNAME) == -1)
   {
     return -1;

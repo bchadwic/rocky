@@ -5,7 +5,8 @@
 #include <netinet/in.h>
 
 #define ROCKY_PORT 60357
-#define STUN_PORT 19302
+// #define STUN_PORT 19302
+#define STUN_PORT 3478
 
 #define STUN_HEADER_SIZE 20
 #define STUN_REQUEST_SIZE 20
@@ -14,7 +15,7 @@
 #define STUN_REQUEST 0x0001
 #define STUN_RESPONSE 0x0101
 
-#define STUN_HOSTNAME "stun.l.google.com"
+#define STUN_HOSTNAME "stun.stunprotocol.org"
 #define STUN_MAGIC_COOKIE 0x2112A442
 #define STUN_ATTR_XOR_MAPPED_ADDRESS 0x0020
 
