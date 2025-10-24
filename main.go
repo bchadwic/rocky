@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"net"
 )
 
 func main() {
@@ -14,23 +13,30 @@ func main() {
 }
 
 func run() error {
-	conn, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: 52838})
+	candidates := NewAddrCandidates()
+
+	// STUN
+	reflexive, outbound, err := getServerReflexiveAddress()
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	candidates.Push(reflexive)
+	candidates.Push(outbound)
 
-	public, err := getpublicaddress(conn)
+	// Local Interfaces
+	locals, err := getLocalAddresses()
 	if err != nil {
 		return err
 	}
 
-	locals, err := getlocaladdresses()
-	if err != nil {
-		return err
+	for i := range locals {
+		local := locals[i]
+		if err = candidates.Push(&local); err != nil {
+			log.Printf("skipping %v: %v", &local, err)
+		}
 	}
+	log.Printf("collected %d candidates", candidates.Len())
 
-	candidates := append(locals, *public)
 	encoded := encode(candidates)
 
 	fmt.Println(encoded)

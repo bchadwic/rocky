@@ -9,8 +9,7 @@ import (
 	"time"
 )
 
-func getpublicaddress(conn *net.UDPConn) (*net.UDPAddr, error) {
-	defer conn.SetReadDeadline(time.Time{})
+func getServerReflexiveAddress() (*AddrCandidate, *AddrCandidate, error) {
 	const (
 		host = "stun.l.google.com"
 		port = 19302
@@ -18,11 +17,52 @@ func getpublicaddress(conn *net.UDPConn) (*net.UDPAddr, error) {
 
 	ips, err := net.LookupIP(host)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if len(ips) == 0 {
-		return nil, fmt.Errorf("could not resolve hostname: %s:%d", host, port)
+		return nil, nil, fmt.Errorf("could not resolve hostname: %s:%d", host, port)
+	}
+
+	try := func(conn *net.UDPConn) (*AddrCandidate, *AddrCandidate, error) {
+		buf, err := pack()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if _, err := conn.Write(buf); err != nil {
+			return nil, nil, err
+		}
+
+		resp := make([]byte, 512)
+		conn.SetReadDeadline(time.Now().Add(800 * time.Millisecond))
+		n, err := conn.Read(resp)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		publicAddr, err := unpack(resp[:n])
+		if err != nil {
+			return nil, nil, err
+		}
+
+		sLocalIp, _, err := net.SplitHostPort(conn.LocalAddr().String())
+		if err != nil {
+			return nil, nil, fmt.Errorf("STUN client ip/port could not be parsed: %s - %v", conn.LocalAddr().String(), err)
+		}
+
+		localIp := net.ParseIP(sLocalIp)
+		if localIp.To4() == nil {
+			return nil, nil, fmt.Errorf("STUN request not sent over ipv4: %s", conn.LocalAddr().String())
+		}
+
+		return &AddrCandidate{
+				priority: LocalOutboundAddress,
+				addr:     &net.UDPAddr{IP: localIp, Port: 0}, // all local address ports should be hardcoded to zero
+			}, &AddrCandidate{
+				priority: ServerReflexiveAddress,
+				addr:     publicAddr,
+			}, nil
 	}
 
 	errs := []error{}
@@ -31,39 +71,24 @@ func getpublicaddress(conn *net.UDPConn) (*net.UDPAddr, error) {
 			continue
 		}
 
-		server := &net.UDPAddr{
-			IP:   ip,
-			Port: port,
-		}
-
-		buf, err := pack()
-		if err != nil {
-			return nil, err
-		}
-
-		if _, err := conn.WriteTo(buf, server); err != nil {
-			errs = append(errs, err)
-			continue
-		}
-
-		resp := make([]byte, 512)
-		conn.SetReadDeadline(time.Now().Add(800 * time.Millisecond))
-		n, err := conn.Read(resp)
+		attempt := &net.UDPAddr{IP: ip, Port: port}
+		conn, err := net.DialUDP("udp", nil, attempt)
 		if err != nil {
 			errs = append(errs, err)
 			continue
 		}
 
-		public, err := unpack(resp[:n])
+		local, public, err := try(conn)
+		conn.Close()
+
 		if err != nil {
 			errs = append(errs, err)
 			continue
 		}
-
-		return public, nil
+		return local, public, nil
 	}
 
-	return nil, errors.Join(errs...)
+	return nil, nil, errors.Join(errs...)
 }
 
 func pack() ([]byte, error) {
