@@ -8,3 +8,5 @@ rocky
 
 # testing files
 test.c
+*.sh
+*.exe
