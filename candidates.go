@@ -2,7 +2,6 @@ package main
 
 import (
 	"container/heap"
-	"fmt"
 	"net"
 )
 
@@ -34,18 +33,17 @@ func NewAddrCandidates() *AddrCandidates {
 	}
 }
 
-func (candidates *AddrCandidates) Push(candidate *AddrCandidate) error {
+func (candidates *AddrCandidates) Push(candidate *AddrCandidate) {
 	if candidate.addr == nil || candidate.addr.IP == nil {
-		return fmt.Errorf("invalid ip address within candidate: %v", &candidate)
+		return
 	}
 
 	ip := candidate.addr.IP.String()
 	if _, seen := candidates.m[ip]; seen {
-		return fmt.Errorf("duplicate ip address being inserted: %v", &candidate)
+		return
 	}
 	candidates.m[ip] = struct{}{}
 	heap.Push(candidates.h, candidate)
-	return nil
 }
 
 func (candidates *AddrCandidates) Pop() *AddrCandidate {
