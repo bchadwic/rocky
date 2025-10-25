@@ -3,33 +3,30 @@ package main
 import (
 	"encoding/base64"
 	"encoding/binary"
-	"fmt"
 	"strings"
 )
 
 func encode(candidates *AddrCandidates) string {
 	var encoded strings.Builder
 
-	fmt.Println("encoding:")
 	for !candidates.Empty() {
 		candidate := candidates.Pop()
 		addr := candidate.addr
 
-		ipv4 := addr.IP.To4()
-		if ipv4 == nil {
+		ip := addr.IP.To4()
+		if ip == nil {
 			continue
 		}
 
-		raw := make([]uint8, 6)
-		copy(raw[0:4], ipv4)
-		binary.BigEndian.PutUint16(raw[4:], uint16(addr.Port))
+		raw := make([]uint8, 4)
+		copy(raw, ip)
+		if addr.Port != 0 {
+			raw = binary.BigEndian.AppendUint16(raw, uint16(addr.Port))
+		}
 
-		encoded.WriteString(base64.StdEncoding.EncodeToString(raw))
+		encoded.WriteString(base64.RawURLEncoding.EncodeToString(raw))
 		encoded.WriteByte(':')
-
-		fmt.Printf("%v ", addr)
 	}
-	fmt.Println()
 
 	n := encoded.Len()
 	if n == 0 {

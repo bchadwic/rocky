@@ -3,7 +3,24 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 )
+
+func animate(stop chan bool) {
+	frames := []string{"-", "\\", "|", "/"}
+	i := 0
+	for {
+		select {
+		case <-stop:
+			fmt.Printf("\x1b[2K\r")
+			return
+		default:
+			fmt.Printf("\rLoading %s", frames[i%len(frames)])
+			i++
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+}
 
 func main() {
 	err := run()
@@ -31,14 +48,20 @@ func run() error {
 
 	for i := range locals {
 		local := locals[i]
-		if err = candidates.Push(&local); err != nil {
-			log.Printf("skipping %v: %v", &local, err)
-		}
+		_ = candidates.Push(&local)
 	}
-	log.Printf("collected %d candidates", candidates.Len())
 
 	encoded := encode(candidates)
+	fmt.Printf("%s\n   \\___ peer exchange: ", encoded)
 
-	fmt.Println(encoded)
+	var in string
+	fmt.Scanf("%s", &in)
+
+	stop := make(chan bool)
+	go animate(stop)
+
+	time.Sleep(3 * time.Second)
+	stop <- true
+
 	return nil
 }

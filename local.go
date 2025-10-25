@@ -17,13 +17,17 @@ func getLocalAddresses() ([]AddrCandidate, error) {
 			return nil, err
 		}
 
+		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+
 		for _, addr := range addrs {
-			ip, _, _ := net.ParseCIDR(addr.String())
-			if ip.To4() == nil || ip.IsLoopback() || !ip.IsPrivate() {
+			ip, _, err := net.ParseCIDR(addr.String())
+			if err != nil || ip.To4() == nil || !ip.IsGlobalUnicast() {
 				continue
 			}
 
-			locals = append(locals, AddrCandidate{priority: 3, addr: &net.UDPAddr{IP: ip, Port: 0}})
+			locals = append(locals, AddrCandidate{priority: LocalAddress, addr: &net.UDPAddr{IP: ip, Port: 0}})
 		}
 	}
 

@@ -8,8 +8,7 @@ import (
 
 const (
 	LocalOutboundAddress = iota
-	LocalPhysicalAddress
-	LocalVirtualAddress
+	LocalAddress
 	ServerReflexiveAddress
 )
 
