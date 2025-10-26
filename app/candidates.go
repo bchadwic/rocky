@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"container/heap"
@@ -11,12 +11,12 @@ const (
 	ServerReflexiveAddress
 )
 
-type AddrCandidate struct {
+type addrCandidate struct {
 	priority int
-	addr     *net.UDPAddr
+	Addr     *net.UDPAddr
 }
 
-type addrCandidatesHeap []*AddrCandidate
+type addrCandidatesHeap []*addrCandidate
 
 type AddrCandidates struct {
 	m map[string]struct{}
@@ -33,12 +33,12 @@ func NewAddrCandidates() *AddrCandidates {
 	}
 }
 
-func (candidates *AddrCandidates) Push(candidate *AddrCandidate) {
-	if candidate.addr == nil || candidate.addr.IP == nil {
+func (candidates *AddrCandidates) Push(candidate *addrCandidate) {
+	if candidate.Addr == nil || candidate.Addr.IP == nil {
 		return
 	}
 
-	ip := candidate.addr.IP.String()
+	ip := candidate.Addr.IP.String()
 	if _, seen := candidates.m[ip]; seen {
 		return
 	}
@@ -46,9 +46,9 @@ func (candidates *AddrCandidates) Push(candidate *AddrCandidate) {
 	heap.Push(candidates.h, candidate)
 }
 
-func (candidates *AddrCandidates) Pop() *AddrCandidate {
-	candidate := heap.Pop(candidates.h).(*AddrCandidate)
-	ip := candidate.addr.IP.String()
+func (candidates *AddrCandidates) Pop() *addrCandidate {
+	candidate := heap.Pop(candidates.h).(*addrCandidate)
+	ip := candidate.Addr.IP.String()
 	delete(candidates.m, ip)
 	return candidate
 }
@@ -61,7 +61,7 @@ func (h addrCandidatesHeap) Less(i int, j int) bool { return h[i].priority < h[j
 func (h addrCandidatesHeap) Swap(i int, j int)      { h[i], h[j] = h[j], h[i] }
 
 func (a *addrCandidatesHeap) Push(v any) {
-	*a = append(*a, v.(*AddrCandidate))
+	*a = append(*a, v.(*addrCandidate))
 }
 
 func (h *addrCandidatesHeap) Pop() any {
