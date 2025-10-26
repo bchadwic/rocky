@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"log"
 	"net"
 	"time"
 )
@@ -14,7 +15,10 @@ func TryConnect(ctx context.Context, cancel context.CancelFunc, socket *net.UDPC
 			return
 		default:
 			for range 3 {
-				_, _ = socket.WriteToUDP([]byte("hello"), addr)
+				_, err := socket.WriteToUDP([]byte("hello"), addr)
+				if err != nil {
+					log.Println(err.Error())
+				}
 			}
 		}
 
@@ -23,5 +27,6 @@ func TryConnect(ctx context.Context, cancel context.CancelFunc, socket *net.UDPC
 			return
 		case <-delay.C:
 		}
+		log.Printf("sent 'hello' to %v\n", addr)
 	}
 }

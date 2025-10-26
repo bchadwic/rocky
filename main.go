@@ -41,12 +41,14 @@ func run() error {
 		return err
 	}
 
-	socket, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4zero, Port: app.Port})
+	addr := &net.UDPAddr{IP: net.IPv4zero, Port: app.Port}
+	socket, err := net.ListenUDP("udp", addr)
 	if err != nil {
 		return err
 	}
 	defer socket.Close()
 	_ = socket.SetReadDeadline(time.Time{})
+	log.Printf("listening on %v\n", addr)
 
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
