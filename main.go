@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/bchadwic/rocky/app"
@@ -45,9 +48,25 @@ func run() error {
 	defer socket.Close()
 	_ = socket.SetReadDeadline(time.Time{})
 
+	var wg sync.WaitGroup
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	for !theirs.Empty() {
-		socket.WriteTo([]byte("hello"), theirs.Pop().Addr)
+		wg.Go(func() { app.TryConnect(ctx, cancel, socket, theirs.Pop().Addr) })
+		time.Sleep(20 * time.Millisecond)
 	}
+
+	buf := make([]byte, 512)
+	n, addr, err := socket.ReadFromUDP(buf)
+	cancel()
+	wg.Wait()
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("recieved: %s, from %v\n", string(buf[:n]), addr)
 
 	return nil
 }
