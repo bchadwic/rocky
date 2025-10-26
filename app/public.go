@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"crypto/rand"
@@ -9,22 +9,22 @@ import (
 	"time"
 )
 
-func getServerReflexiveAddress() (*AddrCandidate, *AddrCandidate, error) {
+func GetServerReflexiveAddress() (*addrCandidate, *addrCandidate, error) {
 	const (
-		host = "stun.l.google.com"
-		port = 19302
+		Host = "stun.l.google.com"
+		Port = 19302
 	)
 
-	ips, err := net.LookupIP(host)
+	ips, err := net.LookupIP(Host)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	if len(ips) == 0 {
-		return nil, nil, fmt.Errorf("could not resolve hostname: %s:%d", host, port)
+		return nil, nil, fmt.Errorf("could not resolve hostname: %s:%d", Host, Port)
 	}
 
-	try := func(conn *net.UDPConn) (*AddrCandidate, *AddrCandidate, error) {
+	try := func(conn *net.UDPConn) (*addrCandidate, *addrCandidate, error) {
 		buf, err := pack()
 		if err != nil {
 			return nil, nil, err
@@ -56,12 +56,12 @@ func getServerReflexiveAddress() (*AddrCandidate, *AddrCandidate, error) {
 			return nil, nil, fmt.Errorf("STUN request not sent over ipv4: %s", conn.LocalAddr().String())
 		}
 
-		return &AddrCandidate{
+		return &addrCandidate{
 				priority: LocalOutboundAddress,
-				addr:     &net.UDPAddr{IP: localIp, Port: 0}, // all local address ports should be hardcoded to zero
-			}, &AddrCandidate{
+				Addr:     &net.UDPAddr{IP: localIp, Port: 0}, // all local address ports should be hardcoded to zero
+			}, &addrCandidate{
 				priority: ServerReflexiveAddress,
-				addr:     publicAddr,
+				Addr:     publicAddr,
 			}, nil
 	}
 
@@ -71,7 +71,7 @@ func getServerReflexiveAddress() (*AddrCandidate, *AddrCandidate, error) {
 			continue
 		}
 
-		attempt := &net.UDPAddr{IP: ip, Port: port}
+		attempt := &net.UDPAddr{IP: ip, Port: Port}
 		conn, err := net.DialUDP("udp", nil, attempt)
 		if err != nil {
 			errs = append(errs, err)
@@ -93,15 +93,15 @@ func getServerReflexiveAddress() (*AddrCandidate, *AddrCandidate, error) {
 
 func pack() ([]byte, error) {
 	const (
-		binding      uint16 = 0x0001
-		noAttributes uint16 = 0x0000
-		magicCookie  uint32 = 0x2112A442
+		Binding      uint16 = 0x0001
+		NoAttributes uint16 = 0x0000
+		MagicCookie  uint32 = 0x2112A442
 	)
 
 	buf := make([]byte, 20)
-	binary.BigEndian.PutUint16(buf[0:], binding)
-	binary.BigEndian.PutUint16(buf[2:], noAttributes)
-	binary.BigEndian.PutUint32(buf[4:], magicCookie)
+	binary.BigEndian.PutUint16(buf[0:], Binding)
+	binary.BigEndian.PutUint16(buf[2:], NoAttributes)
+	binary.BigEndian.PutUint32(buf[4:], MagicCookie)
 	if _, err := rand.Read(buf[8:]); err != nil { // random transaction id
 		return nil, fmt.Errorf("could not create random transaction id for STUN message: %v", err)
 	}
@@ -110,31 +110,31 @@ func pack() ([]byte, error) {
 
 func unpack(buf []byte) (*net.UDPAddr, error) {
 	const (
-		headerLength            = 20
-		binding          uint16 = 0x0101
-		xorMappedAddress uint16 = 0x0020
-		magicCookie      uint32 = 0x2112A442
-		ipv4             uint8  = 0x01
+		HeaderLength            = 20
+		Binding          uint16 = 0x0101
+		XorMappedAddress uint16 = 0x0020
+		MagicCookie      uint32 = 0x2112A442
+		IPv4             uint8  = 0x01
 	)
 	ntohs := binary.BigEndian.Uint16
 	ntohl := binary.BigEndian.Uint32
 
-	if len(buf) < headerLength {
+	if len(buf) < HeaderLength {
 		return nil, fmt.Errorf("STUN reply less than 20 bytes: % X", buf)
 	}
 
 	pos := 0
-	if typ := ntohs(buf[pos:]); typ != binding {
+	if typ := ntohs(buf[pos:]); typ != Binding {
 		return nil, fmt.Errorf("STUN reply type is not binding reply: % X", buf)
 	}
 	pos += 2
 
-	if length := ntohs(buf[pos:]); int(length) > len(buf)-headerLength {
+	if length := ntohs(buf[pos:]); int(length) > len(buf)-HeaderLength {
 		return nil, fmt.Errorf("STUN reply attributes exceed buffer size: % X", buf)
 	}
 	pos += 2
 
-	if cookie := ntohl(buf[pos:]); cookie != magicCookie {
+	if cookie := ntohl(buf[pos:]); cookie != MagicCookie {
 		return nil, fmt.Errorf("STUN reply type magic cookie does not match: % X", buf)
 	}
 	pos += 4 + 12 // 4B cookie + 12B transaction id
@@ -147,7 +147,7 @@ func unpack(buf []byte) (*net.UDPAddr, error) {
 		pos += 2
 
 		// skip any non xor mapped address attributes
-		if typ != xorMappedAddress {
+		if typ != XorMappedAddress {
 			pos += int(length)
 			continue
 		}
@@ -157,16 +157,16 @@ func unpack(buf []byte) (*net.UDPAddr, error) {
 		}
 
 		// skip first byte
-		if buf[pos+1] != ipv4 {
+		if buf[pos+1] != IPv4 {
 			return nil, fmt.Errorf("STUN reply address family is unsupported: %02X", buf[pos])
 		}
 		pos += 2
 
-		port := int(ntohs(buf[pos:]) ^ uint16(magicCookie>>16))
+		port := int(ntohs(buf[pos:]) ^ uint16(MagicCookie>>16))
 		pos += 2
 
 		ip := make(net.IP, 4)
-		binary.BigEndian.PutUint32(ip, ntohl(buf[pos:])^magicCookie)
+		binary.BigEndian.PutUint32(ip, ntohl(buf[pos:])^MagicCookie)
 		pos += 4
 
 		return &net.UDPAddr{

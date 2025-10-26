@@ -1,7 +1,14 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
+	"net"
+	"sync"
+	"time"
+
+	"github.com/bchadwic/rocky/app"
 )
 
 func main() {
@@ -12,30 +19,57 @@ func main() {
 }
 
 func run() error {
-	candidates := NewAddrCandidates()
-
-	// STUN
-	reflexive, outbound, err := getServerReflexiveAddress()
+	reflexive, outbound, err := app.GetServerReflexiveAddress()
 	if err != nil {
 		return err
 	}
 
-	// Local Interfaces
-	locals, err := getLocalAddresses()
+	locals, err := app.GetLocalAddresses()
 	if err != nil {
 		return err
 	}
 
+	ours := app.NewAddrCandidates()
+	ours.Push(reflexive)
+	ours.Push(outbound)
 	for i := range locals {
-		candidates.Push(&locals[i])
+		ours.Push(&locals[i])
 	}
-	candidates.Push(reflexive)
-	candidates.Push(outbound)
+	log.Printf("reflexive: %v, outbound: %v", reflexive, outbound)
 
-	candidates, err = exchange(candidates)
+	theirs, err := app.Exchange(ours)
 	if err != nil {
 		return err
 	}
+
+	addr := &net.UDPAddr{IP: net.IPv4zero, Port: app.Port}
+	socket, err := net.ListenUDP("udp", addr)
+	if err != nil {
+		return err
+	}
+	defer socket.Close()
+	_ = socket.SetReadDeadline(time.Time{})
+	log.Printf("listening on %v\n", addr)
+
+	var wg sync.WaitGroup
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	for !theirs.Empty() {
+		wg.Go(func() { app.TryConnect(ctx, cancel, socket, theirs.Pop().Addr) })
+		time.Sleep(20 * time.Millisecond)
+	}
+
+	buf := make([]byte, 512)
+	n, addr, err := socket.ReadFromUDP(buf)
+	cancel()
+	wg.Wait()
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("recieved: %s, from %v\n", string(buf[:n]), addr)
 
 	return nil
 }

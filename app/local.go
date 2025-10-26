@@ -1,16 +1,16 @@
-package main
+package app
 
 import (
 	"net"
 )
 
-func getLocalAddresses() ([]AddrCandidate, error) {
+func GetLocalAddresses() ([]addrCandidate, error) {
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		return nil, err
 	}
 
-	locals := []AddrCandidate{}
+	locals := []addrCandidate{}
 	for _, iface := range ifaces {
 		addrs, err := iface.Addrs()
 		if err != nil {
@@ -27,7 +27,7 @@ func getLocalAddresses() ([]AddrCandidate, error) {
 				continue
 			}
 
-			locals = append(locals, AddrCandidate{priority: LocalAddress, addr: &net.UDPAddr{IP: ip, Port: 0}})
+			locals = append(locals, addrCandidate{priority: LocalAddress, Addr: &net.UDPAddr{IP: ip, Port: 0}})
 		}
 	}
 

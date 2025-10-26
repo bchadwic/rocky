@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"encoding/base64"
@@ -8,17 +8,17 @@ import (
 	"strings"
 )
 
-func exchange(candidates *AddrCandidates) (*AddrCandidates, error) {
-	ourCandidates, err := serialize(candidates)
+func Exchange(candidates *AddrCandidates) (*AddrCandidates, error) {
+	ours, err := serialize(candidates)
 	if err != nil {
 		return nil, err
 	}
 
-	var theirCandidates string
-	fmt.Printf("%s\n   \\__ peer exchange: ", ourCandidates)
-	fmt.Scanf("%s", &theirCandidates)
+	var theirs string
+	fmt.Printf("%s\n   \\__ peer exchange: ", ours)
+	fmt.Scanf("%s", &theirs)
 
-	return deserialize(theirCandidates)
+	return deserialize(theirs)
 }
 
 func serialize(candidates *AddrCandidates) (string, error) {
@@ -26,7 +26,7 @@ func serialize(candidates *AddrCandidates) (string, error) {
 
 	for !candidates.Empty() {
 		candidate := candidates.Pop()
-		addr := candidate.addr
+		addr := candidate.Addr
 
 		ip := addr.IP.To4()
 		if ip == nil {
@@ -67,6 +67,7 @@ func deserialize(encoded string) (*AddrCandidates, error) {
 			}
 
 			addr.IP = net.IP(b[:4])
+			addr.Port = Port
 		case 8: // reflexive network address
 			b := make([]byte, 6)
 			if n, err := base64.RawURLEncoding.Decode(b, s); err != nil || n != 6 {
@@ -79,7 +80,7 @@ func deserialize(encoded string) (*AddrCandidates, error) {
 			continue
 		}
 
-		candidate := &AddrCandidate{priority: priority, addr: addr}
+		candidate := &addrCandidate{priority: priority, Addr: addr}
 		candidates.Push(candidate)
 	}
 
