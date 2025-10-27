@@ -35,7 +35,7 @@ func run() error {
 	// for i := range locals {
 	// 	ours.Push(&locals[i])
 	// }
-	log.Printf("reflexive: %v, outbound: %v", reflexive, outbound)
+	fmt.Printf("RFLX:%v, OUT: %v", reflexive, outbound)
 
 	theirs, err := app.Exchange(ours)
 	if err != nil {
@@ -49,7 +49,6 @@ func run() error {
 	}
 	defer socket.Close()
 	_ = socket.SetReadDeadline(time.Time{})
-	log.Printf("listening on %v\n", addr)
 
 	var wg sync.WaitGroup
 	ctx, cancel := context.WithCancel(context.Background())
