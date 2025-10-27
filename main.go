@@ -41,7 +41,7 @@ func holePunchTest() error {
 	// exchange candidates with remote (assume app.Exchange exists)
 	ours := app.NewAddrCandidates()
 	ours.Push(reflexive)
-	ours.Push(outbound)
+	// ours.Push(outbound)
 
 	theirs, err := app.Exchange(ours)
 	if err != nil {
