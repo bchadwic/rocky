@@ -52,6 +52,7 @@ func run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	their := theirs.Pop().Addr
 	go func() {
 		delay := time.NewTicker(100 * time.Millisecond)
 		for {
@@ -59,7 +60,7 @@ func run() error {
 			case <-ctx.Done():
 				return
 			default:
-				_, err = conn.WriteToUDP([]byte("hello"), theirs.Pop().Addr)
+				_, err = conn.WriteToUDP([]byte("hello"), their)
 				if err != nil {
 					log.Printf("%v\n", err)
 					return
@@ -79,6 +80,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	cancel()
 
 	fmt.Printf("reply received: %s\n", buf[:n])
 	return nil
