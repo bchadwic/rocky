@@ -18,7 +18,7 @@ func main() {
 }
 
 func run() error {
-	reflexive, _, err := app.GetServerReflexiveAddress()
+	reflexive, outbound, err := app.GetServerReflexiveAddress()
 	if err != nil {
 		return err
 	}
@@ -34,15 +34,16 @@ func run() error {
 	// for i := range locals {
 	// 	ours.Push(&locals[i])
 	// }
-	// fmt.Printf("RFLX:%v, OUT: %v\n", reflexive, outbound)
+	fmt.Printf("RFLX:%v, OUT: %v\n", reflexive, outbound)
 
 	theirs, err := app.Exchange(ours)
 	if err != nil {
 		return err
 	}
 
-	addr := &net.UDPAddr{IP: net.IPv4zero, Port: app.Port}
-	conn, err := net.ListenUDP("udp", addr)
+	// addr := &net.UDPAddr{IP: net.IPv4zero, Port: app.Port}
+	outbound.Addr.Port = app.Port
+	conn, err := net.ListenUDP("udp", outbound.Addr)
 	if err != nil {
 		return err
 	}
@@ -65,6 +66,7 @@ func run() error {
 					log.Printf("%v\n", err)
 					return
 				}
+				fmt.Printf("sending packet to %v\n", their)
 			}
 
 			select {
