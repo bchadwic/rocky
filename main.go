@@ -43,7 +43,7 @@ func run() error {
 	}
 
 	addr := &net.UDPAddr{IP: net.IPv4zero, Port: app.Port}
-	socket, err := net.ListenUDP("udp", addr)
+	socket, err := net.ListenUDP("udp4", addr)
 	if err != nil {
 		return err
 	}
@@ -55,11 +55,21 @@ func run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	for !theirs.Empty() {
-		wg.Go(func() { app.TryConnect(ctx, cancel, socket, theirs.Pop().Addr) })
-		time.Sleep(20 * time.Millisecond)
+	srcs := []net.UDPAddr{*reflexive.Addr, *outbound.Addr}
+	for _, local := range locals {
+		srcs = append(srcs, *local.Addr)
 	}
 
+	for !theirs.Empty() {
+		dst := theirs.Pop().Addr
+		for i := range srcs {
+			src := &srcs[i]
+			wg.Go(func() { app.TryConnect(ctx, cancel, src, dst) })
+			time.Sleep(20 * time.Millisecond)
+		}
+	}
+
+	log.Printf("reading from udp, waiting on replies\n")
 	buf := make([]byte, 512)
 	n, addr, err := socket.ReadFromUDP(buf)
 	cancel()

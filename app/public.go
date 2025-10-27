@@ -57,11 +57,12 @@ func GetServerReflexiveAddress() (*addrCandidate, *addrCandidate, error) {
 		}
 
 		return &addrCandidate{
-				priority: LocalOutboundAddress,
-				Addr:     &net.UDPAddr{IP: localIp, Port: 0}, // all local address ports should be hardcoded to zero
-			}, &addrCandidate{
 				priority: ServerReflexiveAddress,
 				Addr:     publicAddr,
+			},
+			&addrCandidate{
+				priority: LocalOutboundAddress,
+				Addr:     &net.UDPAddr{IP: localIp, Port: 0}, // all local address ports should be hardcoded to zero
 			}, nil
 	}
 
@@ -72,7 +73,7 @@ func GetServerReflexiveAddress() (*addrCandidate, *addrCandidate, error) {
 		}
 
 		attempt := &net.UDPAddr{IP: ip, Port: Port}
-		conn, err := net.DialUDP("udp", nil, attempt)
+		conn, err := net.DialUDP("udp4", nil, attempt)
 		if err != nil {
 			errs = append(errs, err)
 			continue
