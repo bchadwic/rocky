@@ -3,12 +3,12 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"time"
 )
 
 func TryConnect(ctx context.Context, cancel context.CancelFunc, src, dst *net.UDPAddr) {
+	src.Port = 0
 	conn, err := net.DialUDP("udp4", src, dst)
 	if err != nil {
 		fmt.Printf("ERROR dialing: %v\n", err)
@@ -30,7 +30,7 @@ func TryConnect(ctx context.Context, cancel context.CancelFunc, src, dst *net.UD
 			}
 		}
 
-		log.Printf("%v->%v\n", dst, conn.LocalAddr())
+		fmt.Printf("%v->%v\n", dst, conn.LocalAddr())
 
 		select {
 		case <-ctx.Done():
