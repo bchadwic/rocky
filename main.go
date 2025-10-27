@@ -55,15 +55,10 @@ func run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	srcs := []net.UDPAddr{*reflexive.Addr, *outbound.Addr}
-	for _, local := range locals {
-		srcs = append(srcs, *local.Addr)
-	}
-
 	for !theirs.Empty() {
 		dst := theirs.Pop().Addr
-		for i := range srcs {
-			src := &srcs[i]
+		for i := range locals {
+			src := locals[i].Addr
 			wg.Go(func() { app.TryConnect(ctx, cancel, src, dst) })
 			time.Sleep(20 * time.Millisecond)
 		}
