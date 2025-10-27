@@ -35,7 +35,7 @@ func run() error {
 	// for i := range locals {
 	// 	ours.Push(&locals[i])
 	// }
-	fmt.Printf("RFLX:%v, OUT: %v", reflexive, outbound)
+	fmt.Printf("RFLX:%v, OUT: %v\n", reflexive, outbound)
 
 	theirs, err := app.Exchange(ours)
 	if err != nil {
