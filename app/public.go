@@ -73,7 +73,7 @@ func GetServerReflexiveAddress() (*addrCandidate, *addrCandidate, error) {
 		}
 
 		attempt := &net.UDPAddr{IP: ip, Port: Port}
-		conn, err := net.DialUDP("udp4", nil, attempt)
+		conn, err := net.DialUDP("udp4", &net.UDPAddr{IP: net.IPv4zero, Port: Port}, attempt)
 		if err != nil {
 			errs = append(errs, err)
 			continue
