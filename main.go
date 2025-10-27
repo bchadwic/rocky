@@ -31,10 +31,10 @@ func run() error {
 
 	ours := app.NewAddrCandidates()
 	ours.Push(reflexive)
-	ours.Push(outbound)
-	for i := range locals {
-		ours.Push(&locals[i])
-	}
+	// ours.Push(outbound)
+	// for i := range locals {
+	// 	ours.Push(&locals[i])
+	// }
 	log.Printf("reflexive: %v, outbound: %v", reflexive, outbound)
 
 	theirs, err := app.Exchange(ours)
