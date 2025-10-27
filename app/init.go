@@ -9,7 +9,7 @@ import (
 
 func TryConnect(ctx context.Context, cancel context.CancelFunc, src, dst *net.UDPAddr) {
 	src.Port = 0
-	conn, err := net.DialUDP("udp4", src, dst)
+	conn, err := net.ListenUDP("udp4", src)
 	if err != nil {
 		fmt.Printf("ERROR dialing: %v\n", err)
 		return
@@ -23,7 +23,7 @@ func TryConnect(ctx context.Context, cancel context.CancelFunc, src, dst *net.UD
 			return
 		default:
 			for range 3 {
-				_, err := conn.Write([]byte("hello"))
+				_, err := conn.WriteToUDP([]byte("hello"), dst)
 				if err != nil {
 					fmt.Printf("ERROR writing: %v\n", err)
 				}

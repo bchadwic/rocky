@@ -1,11 +1,9 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net"
-	"sync"
 	"time"
 
 	"github.com/bchadwic/rocky/app"
@@ -19,15 +17,15 @@ func main() {
 }
 
 func run() error {
-	reflexive, outbound, err := app.GetServerReflexiveAddress()
+	reflexive, _, err := app.GetServerReflexiveAddress()
 	if err != nil {
 		return err
 	}
 
-	locals, err := app.GetLocalAddresses()
-	if err != nil {
-		return err
-	}
+	// locals, err := app.GetLocalAddresses()
+	// if err != nil {
+	// 	return err
+	// }
 
 	ours := app.NewAddrCandidates()
 	ours.Push(reflexive)
@@ -35,7 +33,7 @@ func run() error {
 	// for i := range locals {
 	// 	ours.Push(&locals[i])
 	// }
-	fmt.Printf("RFLX:%v, OUT: %v\n", reflexive, outbound)
+	// fmt.Printf("RFLX:%v, OUT: %v\n", reflexive, outbound)
 
 	theirs, err := app.Exchange(ours)
 	if err != nil {
@@ -43,37 +41,24 @@ func run() error {
 	}
 
 	addr := &net.UDPAddr{IP: net.IPv4zero, Port: app.Port}
-	socket, err := net.ListenUDP("udp4", addr)
+	conn, err := net.ListenUDP("udp4", addr)
 	if err != nil {
 		return err
 	}
-	defer socket.Close()
-	_ = socket.SetReadDeadline(time.Time{})
+	defer conn.Close()
+	_ = conn.SetReadDeadline(time.Time{})
 
-	var wg sync.WaitGroup
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	for !theirs.Empty() {
-		dst := theirs.Pop().Addr
-		for i := range locals {
-			src := locals[i].Addr
-			wg.Go(func() { app.TryConnect(ctx, cancel, src, dst) })
-			time.Sleep(20 * time.Millisecond)
-		}
+	_, err = conn.WriteToUDP([]byte("hello"), theirs.Pop().Addr)
+	if err != nil {
+		return err
 	}
 
-	log.Printf("reading from udp, waiting on replies\n")
 	buf := make([]byte, 512)
-	n, addr, err := socket.ReadFromUDP(buf)
-	cancel()
-	wg.Wait()
-
+	n, err := conn.Read(buf)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("recieved: %s, from %v\n", string(buf[:n]), addr)
-
+	fmt.Printf("reply received: %s\n", buf[:n])
 	return nil
 }
