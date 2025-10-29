@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"syscall"
 	"time"
+
+	"github.com/pion/stun"
 )
 
 func main() {
@@ -14,6 +16,42 @@ func main() {
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
+	err = test()
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+}
+
+func test() error {
+	// Parse a STUN URI
+	u, err := stun.ParseURI("stun:stun.l.google.com:19302")
+	if err != nil {
+		panic(err)
+	}
+
+	// Creating a "connection" to STUN server.
+	c, err := stun.DialURI(u, &stun.DialConfig{})
+	if err != nil {
+		panic(err)
+	}
+	// Building binding request with random transaction id.
+	message := stun.MustBuild(stun.TransactionID, stun.BindingRequest)
+	// Sending request to STUN server, waiting for response message.
+	if err := c.Do(message, func(res stun.Event) {
+		if res.Error != nil {
+			panic(res.Error)
+		}
+		// Decoding XOR-MAPPED-ADDRESS attribute from message.
+		var xorAddr stun.XORMappedAddress
+		if err := xorAddr.GetFrom(res.Message); err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("public: %v:%d\n", xorAddr.IP, xorAddr.Port)
+	}); err != nil {
+		panic(err)
+	}
+	return nil
 }
 
 func run() error {
