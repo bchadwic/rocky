@@ -11,8 +11,8 @@ import (
 
 func getServerReflexiveAddress() (*AddrCandidate, *AddrCandidate, error) {
 	const (
-		host = "stun.l.google.com"
-		port = 19302
+		host = "stun.cloudflare.com"
+		port = 3478
 	)
 
 	ips, err := net.LookupIP(host)
@@ -57,11 +57,11 @@ func getServerReflexiveAddress() (*AddrCandidate, *AddrCandidate, error) {
 		}
 
 		return &AddrCandidate{
-				priority: LocalOutboundAddress,
-				addr:     &net.UDPAddr{IP: localIp, Port: 0}, // all local address ports should be hardcoded to zero
-			}, &AddrCandidate{
 				priority: ServerReflexiveAddress,
 				addr:     publicAddr,
+			}, &AddrCandidate{
+				priority: LocalOutboundAddress,
+				addr:     &net.UDPAddr{IP: localIp, Port: 0}, // all local address ports should be hardcoded to zero
 			}, nil
 	}
 
