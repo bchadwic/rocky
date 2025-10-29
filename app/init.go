@@ -30,7 +30,7 @@ func TryConnect(ctx context.Context, cancel context.CancelFunc, src, dst *net.UD
 			}
 		}
 
-		fmt.Printf("%v->%v\n", dst, conn.LocalAddr())
+		fmt.Printf("%v->%v\n", conn.LocalAddr(), dst)
 
 		select {
 		case <-ctx.Done():
