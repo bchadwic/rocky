@@ -67,7 +67,7 @@ func deserialize(encoded string) (*AddrCandidates, error) {
 			}
 
 			addr.IP = net.IP(b[:4])
-			addr.Port = Port
+			addr.Port = RockyPort
 		case 8: // reflexive network address
 			b := make([]byte, 6)
 			if n, err := base64.RawURLEncoding.Decode(b, s); err != nil || n != 6 {

@@ -66,14 +66,16 @@ func GetServerReflexiveAddress() (*addrCandidate, *addrCandidate, error) {
 			}, nil
 	}
 
+	local := &net.UDPAddr{IP: net.IPv4zero, Port: RockyPort}
 	errs := []error{}
 	for _, ip := range ips {
-		if ip.To4() == nil {
+		ipv4 := ip.To4()
+		if ipv4 == nil {
 			continue
 		}
 
-		attempt := &net.UDPAddr{IP: ip, Port: Port}
-		conn, err := net.DialUDP("udp4", nil, attempt)
+		attempt := &net.UDPAddr{IP: ipv4, Port: Port}
+		conn, err := net.DialUDP("udp4", local, attempt)
 		if err != nil {
 			errs = append(errs, err)
 			continue

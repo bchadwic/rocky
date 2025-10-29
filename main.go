@@ -42,7 +42,7 @@ func run() error {
 		return err
 	}
 
-	addr := &net.UDPAddr{IP: net.IPv4zero, Port: app.Port}
+	addr := &net.UDPAddr{IP: net.IPv4zero, Port: app.RockyPort}
 	socket, err := net.ListenUDP("udp4", addr)
 	if err != nil {
 		return err

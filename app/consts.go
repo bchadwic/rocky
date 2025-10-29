@@ -1,5 +1,5 @@
 package app
 
 const (
-	Port = 52333
+	RockyPort = 52333
 )
