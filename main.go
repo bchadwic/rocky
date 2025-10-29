@@ -74,6 +74,10 @@ func run() error {
 	}
 
 	fmt.Printf("recieved: %s, from %v\n", string(buf[:n]), addr)
+	_, err = socket.WriteTo([]byte("hello real address"), addr)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
