@@ -63,6 +63,7 @@ func run() error {
 
 	tryConnect(fd, peer)
 
+	fmt.Println("connected!")
 	return nil
 }
 
