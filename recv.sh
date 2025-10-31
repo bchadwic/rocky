@@ -1,0 +1,1 @@
+(rm output || true) && make && odon -r output
