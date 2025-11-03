@@ -6,22 +6,37 @@
 
 struct odon_conn
 {
-    int fd;
+    int socket;
 };
 
 // GOAL: transmit a UDP packet reliably to a peer
 
-extern int odon_init(struct odon_conn *conn, in_addr_t ip, in_port_t port);
+extern int odon_init(
+    struct odon_conn *conn,
+    struct sockaddr_in *src, socklen_t src_len,
+    struct sockaddr_in *dst, socklen_t dst_len);
 extern int odon_send(struct odon_conn *conn, char *buf, size_t len);
+/* should be called after every odon_* function that fails */
 extern void odon_free(struct odon_conn *conn);
 
 static void *await_ack(void *arg);
 
 int main(void)
 {
+    struct sockaddr_in src = {0};
+    src.sin_family = AF_INET;
+    src.sin_addr.s_addr = INADDR_ANY;
+    src.sin_port = htons(58888);
+
+    struct sockaddr_in dst = {0};
+    dst.sin_family = AF_INET;
+    dst.sin_addr.s_addr = INADDR_ANY;
+    dst.sin_port = htons(58887);
+
     struct odon_conn conn = {0};
-    if (odon_init(&conn, INADDR_ANY, htons(58888)) < 0)
+    if (odon_init(&conn, &src, sizeof(src), &dst, sizeof(dst)) < 0)
     {
+        odon_free(&conn);
         return 1;
     }
 
@@ -30,6 +45,7 @@ int main(void)
 
     if (odon_send(&conn, buf, len) < 0)
     {
+        odon_free(&conn);
         return 1;
     }
 
@@ -37,25 +53,26 @@ int main(void)
     return 0;
 }
 
-int odon_conn(struct odon_conn *conn, in_addr_t ip, in_port_t port)
+extern int odon_init(
+    struct odon_conn *conn,
+    struct sockaddr_in *src, socklen_t src_len,
+    struct sockaddr_in *dst, socklen_t dst_len)
 {
-    int fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
-    if (fd < 0)
+    conn->socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (conn->socket < 0)
     {
         return -1;
     }
 
-    struct sockaddr_in local = {0};
-    local.sin_family = AF_INET;
-    local.sin_addr.s_addr = ip;
-    local.sin_port = port;
-
-    if (bind(fd, (struct sockaddr *)&local, sizeof(local)) < 0)
+    if (bind(conn->socket, (struct sockaddr *)src, src_len) < 0)
     {
         return -1;
     }
 
-    conn->fd = fd;
+    if (connect(conn->socket, (struct sockaddr *)dst, dst_len) < 0)
+    {
+        return -1;
+    }
     return 0;
 }
 
@@ -72,7 +89,7 @@ int odon_send(struct odon_conn *conn, char *buf, size_t len)
 
 extern void odon_free(struct odon_conn *conn)
 {
-    close(conn->fd);
+    close(conn->socket);
 }
 
 static void *await_ack(void *arg)
