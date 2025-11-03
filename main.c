@@ -41,7 +41,7 @@ int main(void)
     }
 
     char *buf = "hello world\n";
-    size_t len = sizeof(buf);
+    size_t len = strlen(buf);
 
     if (odon_send(&conn, buf, len) < 0)
     {
