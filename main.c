@@ -4,22 +4,23 @@
 #include <unistd.h>
 #include <pthread.h>
 
+struct odon_conn
+{
+    int fd;
+};
+
 // GOAL: transmit a UDP packet reliably to a peer
 
-extern int odon_socket(struct sockaddr_in *local, socklen_t len);
-extern int odon_send(int fd, char *buf, size_t len);
+extern int odon_init(struct odon_conn *conn, in_addr_t ip, in_port_t port);
+extern int odon_send(struct odon_conn *conn, char *buf, size_t len);
+extern void odon_free(struct odon_conn *conn);
 
 static void *await_ack(void *arg);
 
 int main(void)
 {
-    struct sockaddr_in local = {0};
-    local.sin_family = AF_INET;
-    local.sin_addr.s_addr = INADDR_ANY;
-    local.sin_port = htons(58888);
-
-    int fd = odon_socket(&local, sizeof(local));
-    if (fd < 0)
+    struct odon_conn conn = {0};
+    if (odon_init(&conn, INADDR_ANY, htons(58888)) < 0)
     {
         return 1;
     }
@@ -27,15 +28,16 @@ int main(void)
     char *buf = "hello world\n";
     size_t len = sizeof(buf);
 
-    if (odon_send(fd, buf, len) < 0)
+    if (odon_send(&conn, buf, len) < 0)
     {
         return 1;
     }
-    close(fd);
+
+    odon_free(&conn);
     return 0;
 }
 
-int odon_socket(struct sockaddr_in *local, socklen_t len)
+int odon_conn(struct odon_conn *conn, in_addr_t ip, in_port_t port)
 {
     int fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (fd < 0)
@@ -43,18 +45,24 @@ int odon_socket(struct sockaddr_in *local, socklen_t len)
         return -1;
     }
 
-    if (bind(fd, (struct sockaddr *)local, len) < 0)
+    struct sockaddr_in local = {0};
+    local.sin_family = AF_INET;
+    local.sin_addr.s_addr = ip;
+    local.sin_port = port;
+
+    if (bind(fd, (struct sockaddr *)&local, sizeof(local)) < 0)
     {
         return -1;
     }
 
-    return fd;
+    conn->fd = fd;
+    return 0;
 }
 
-int odon_send(int fd, char *buf, size_t len)
+int odon_send(struct odon_conn *conn, char *buf, size_t len)
 {
     pthread_t verify;
-    pthread_create(&verify, NULL, await_ack, fd);
+    pthread_create(&verify, NULL, await_ack, (void *)conn);
 
     // send UDP packet
 
@@ -62,9 +70,14 @@ int odon_send(int fd, char *buf, size_t len)
     return 0;
 }
 
+extern void odon_free(struct odon_conn *conn)
+{
+    close(conn->fd);
+}
+
 static void *await_ack(void *arg)
 {
-    int fd = (int)arg;
+    struct odon_conn *conn = (struct odon_conn *)arg;
 
     // listen for ack
 
