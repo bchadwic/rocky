@@ -76,12 +76,16 @@ extern int odon_init(
     return 0;
 }
 
-int odon_send(struct odon_conn *conn, char *buf, size_t len)
+extern int odon_send(struct odon_conn *conn, char *buf, size_t len)
 {
     pthread_t verify;
     pthread_create(&verify, NULL, await_ack, (void *)conn);
 
-    // send UDP packet
+    if (send(conn->socket, buf, len, 0) < 0)
+    {
+        pthread_cancel(verify);
+        return -1;
+    }
 
     pthread_join(verify, NULL);
     return 0;
