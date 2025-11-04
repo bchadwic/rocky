@@ -18,14 +18,11 @@ struct odon_conn
     pthread_mutex_t mutex;
 };
 
-// GOAL: transmit a UDP packet reliably to a peer
-
-extern int odon_init(
-    struct odon_conn *conn,
-    struct sockaddr_in *src, socklen_t src_len,
-    struct sockaddr_in *dst, socklen_t dst_len);
+extern int odon_init(struct odon_conn *conn,
+                     struct sockaddr_in *src, socklen_t src_len,
+                     struct sockaddr_in *dst, socklen_t dst_len);
 extern int odon_send(struct odon_conn *conn, char *buf, size_t len);
-/* should be called after every odon_* function that fails */
+// should be called after every odon_* function that fails
 extern void odon_free(struct odon_conn *conn);
 
 static void *await_ack(void *arg);
@@ -146,12 +143,11 @@ static void *await_ack(void *arg)
 {
     struct odon_conn *conn = (struct odon_conn *)arg;
 
-    int status = 1;
     uint8_t buf[512] = {0};
     read(conn->socket, buf, 512); // handle error
 
     pthread_mutex_lock(&conn->mutex);
-    conn->ack_received = status;
+    conn->ack_received = 1;
     pthread_cond_signal(&conn->ack_cond);
     pthread_mutex_unlock(&conn->mutex);
     return NULL;
