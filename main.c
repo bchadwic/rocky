@@ -14,13 +14,8 @@ struct odon_conn
 {
     int socket;
     int ack_received;
-    pthread_mutex_t mutex;
     pthread_cond_t ack_cond;
-};
-
-struct ack_response
-{
-    int status;
+    pthread_mutex_t mutex;
 };
 
 // GOAL: transmit a UDP packet reliably to a peer
@@ -102,7 +97,8 @@ extern int odon_send(struct odon_conn *conn, char *buf, size_t len)
     pthread_create(&tid, NULL, await_ack, (void *)conn);
 
     int timedwait_sec = 1; // 1s
-    while (1)
+    int acked = 0;
+    while (!acked)
     {
         if (send(conn->socket, buf, len, 0) < 0)
         {
@@ -131,13 +127,8 @@ extern int odon_send(struct odon_conn *conn, char *buf, size_t len)
                 return -1;
             }
         }
-        int acked = conn->ack_received;
+        acked = conn->ack_received;
         pthread_mutex_unlock(&conn->mutex);
-
-        if (acked)
-        {
-            break;
-        }
     }
 
     pthread_join(tid, NULL);
@@ -155,10 +146,12 @@ static void *await_ack(void *arg)
 {
     struct odon_conn *conn = (struct odon_conn *)arg;
 
-    // listen for ack
+    int status = 1;
+    uint8_t buf[512] = {0};
+    read(conn->socket, buf, 512); // handle error
 
     pthread_mutex_lock(&conn->mutex);
-    conn->ack_received = 1;
+    conn->ack_received = status;
     pthread_cond_signal(&conn->ack_cond);
     pthread_mutex_unlock(&conn->mutex);
     return NULL;
