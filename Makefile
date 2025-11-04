@@ -1,21 +1,44 @@
+# Compiler
 CC := gcc
-CFLAGS := -Wall -Wextra -std=c11 -Iinclude
-LDFLAGS :=
 
-SRC := src/holepunch.c src/peer.c src/stun.c main.c
-OBJ := $(SRC:.c=.o)
+# Output binary
+TARGET := odon
 
-TARGET := rocky
+# Source files
+SRCS := main.c
 
-all: $(TARGET)
+# Object files
+OBJS := $(SRCS:.c=.o)
 
-$(TARGET): $(OBJ)
-	$(CC) $(LDFLAGS) -o $@ $^
+# Default flags (debug build)
+CFLAGS := -std=c11 -Wall -Wextra -g -O0
+LDFLAGS := -lpthread
 
+# Release flags
+RELEASE_CFLAGS := -std=c11 -Wall -Wextra -O2 -flto -s
+RELEASE_LDFLAGS := -flto -lpthread
+
+# Default target
+all: debug
+
+# Debug build
+debug: CFLAGS += -DDEBUG
+debug: $(TARGET)
+
+# Release build
+release: CFLAGS := $(RELEASE_CFLAGS)
+release: LDFLAGS := $(RELEASE_LDFLAGS)
+release: $(TARGET)
+
+# Link the binary
+$(TARGET): $(OBJS)
+	$(CC) $(OBJS) -o $(TARGET) $(LDFLAGS)
+
+# Compile .c to .o
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Clean build artifacts
+.PHONY: clean
 clean:
-	rm -f $(OBJ) $(TARGET)
-
-.PHONY: all clean
+	rm -f $(OBJS) $(TARGET)
