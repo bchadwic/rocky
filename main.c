@@ -190,7 +190,10 @@ static void *await_ack(void *arg)
     struct odon_conn *conn = (struct odon_conn *)arg;
 
     uint8_t buf[512] = {0};
-    read(conn->socket, buf, 512); // handle error
+    if (recv(conn->socket, buf, 512, 0) < 0)
+    {
+        printf("could not read\n");
+    }
 
     pthread_mutex_lock(&conn->mutex);
     conn->ack_received = 1;
