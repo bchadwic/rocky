@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
     if (strcmp(arg, "send") == 0)
     {
-        char *buf = "hello world\n";
+        char *buf = "hello world";
         size_t len = strlen(buf);
 
         if (odon_send(&conn, buf, len) < 0)
