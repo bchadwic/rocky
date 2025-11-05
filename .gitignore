@@ -3,10 +3,8 @@
 
 # compile files
 a.out
-rocky
+odon
 **.o
 
 # testing files
 test.c
-*.sh
-*.exe
