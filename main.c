@@ -2,10 +2,11 @@
 
 #include <stdio.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <time.h>
+#include <sys/time.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -13,9 +14,6 @@
 struct odon_conn
 {
     int socket;
-    int ack_received;
-    pthread_cond_t ack_cond;
-    pthread_mutex_t mutex;
 };
 
 extern int odon_init(struct odon_conn *conn,
@@ -25,8 +23,6 @@ extern int odon_send(struct odon_conn *conn, char *buf, size_t len);
 extern int odon_recv(struct odon_conn *conn, char *buf, size_t len);
 // should be called after every odon_* function that fails
 extern void odon_free(struct odon_conn *conn);
-
-static void *await_ack(void *arg);
 
 int main(int argc, char *argv[])
 {
@@ -111,54 +107,42 @@ extern int odon_init(
     {
         return -1;
     }
-
-    conn->ack_received = 0;
-    pthread_mutex_init(&conn->mutex, NULL);
-    pthread_cond_init(&conn->ack_cond, NULL);
     return 0;
 }
 
 extern int odon_send(struct odon_conn *conn, char *buf, size_t len)
 {
-    pthread_t tid;
-    pthread_create(&tid, NULL, await_ack, (void *)conn);
 
-    int timedwait_sec = 1; // 1s
-    int acked = 0;
-    while (!acked)
+    int success = 0;
+    for (int i = 1; i <= 3; i++)
     {
         if (send(conn->socket, buf, len, 0) < 0)
         {
-            pthread_cancel(tid);
             return -1;
         }
 
-        struct timespec ts;
-        clock_gettime(CLOCK_REALTIME, &ts);
-        ts.tv_sec += timedwait_sec;
+        struct timeval tv = {.tv_sec = 1 * i, .tv_usec = 0};
+        setsockopt(conn->socket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
-        pthread_mutex_lock(&conn->mutex);
-        while (!conn->ack_received)
+        char ack[512];
+        int n = recv(conn->socket, ack, 512, 0);
+        if (n >= 0)
         {
-            int res = pthread_cond_timedwait(&conn->ack_cond, &conn->mutex, &ts);
-            if (res == ETIMEDOUT)
-            {
-                printf("ack timed out\n");
-                timedwait_sec *= 2;
-                break;
-            }
-            else if (res < 0)
-            {
-                pthread_mutex_unlock(&conn->mutex);
-                pthread_cancel(tid);
-                return -1;
-            }
+            success = 1;
+            break;
         }
-        acked = conn->ack_received;
-        pthread_mutex_unlock(&conn->mutex);
+
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+        {
+            continue;
+        }
+        return -1;
     }
 
-    pthread_join(tid, NULL);
+    if (!success)
+    {
+        return -1;
+    }
     return 0;
 }
 
@@ -181,23 +165,4 @@ extern int odon_recv(struct odon_conn *conn, char *buf, size_t len)
 extern void odon_free(struct odon_conn *conn)
 {
     close(conn->socket);
-    pthread_mutex_destroy(&conn->mutex);
-    pthread_cond_destroy(&conn->ack_cond);
-}
-
-static void *await_ack(void *arg)
-{
-    struct odon_conn *conn = (struct odon_conn *)arg;
-
-    uint8_t buf[512] = {0};
-    if (recv(conn->socket, buf, 512, 0) < 0)
-    {
-        printf("could not read\n");
-    }
-
-    pthread_mutex_lock(&conn->mutex);
-    conn->ack_received = 1;
-    pthread_cond_signal(&conn->ack_cond);
-    pthread_mutex_unlock(&conn->mutex);
-    return NULL;
 }
