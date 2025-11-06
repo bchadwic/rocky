@@ -1,0 +1,29 @@
+#ifndef ODON_H
+
+#define _POSIX_C_SOURCE 199309L
+
+#include <stdio.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <pthread.h>
+#include <sys/time.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+
+struct odon_conn
+{
+  int socket;
+};
+
+extern int odon_init(struct odon_conn *conn,
+                     struct sockaddr_in *src, socklen_t src_len,
+                     struct sockaddr_in *dst, socklen_t dst_len);
+extern int odon_send(struct odon_conn *conn, char *buf, size_t len);
+extern int odon_recv(struct odon_conn *conn, char *buf, size_t len);
+// should be called after every odon_* function that fails
+extern void odon_free(struct odon_conn *conn);
+
+#endif
