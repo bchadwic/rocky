@@ -26,43 +26,35 @@ extern void odon_free(struct odon_conn *conn);
 
 int main(int argc, char *argv[])
 {
-    if (argc < 4)
+    if (argc < 2)
     {
-        printf("need 3 arguments\n");
+        printf("need 1 arguments\n");
         return 1;
     }
 
-    char *arg = argv[1];
-    int src_port = atoi(argv[2]);
-    int dst_port = atoi(argv[3]);
-    if (src_port < 0 || dst_port < 0)
+    if (strcmp(argv[1], "send") == 0)
     {
-        printf("arguments must be numeric\n");
-        return 1;
-    }
-
-    struct sockaddr_in src = {0};
-    src.sin_family = AF_INET;
-    src.sin_addr.s_addr = htonl(INADDR_ANY);
-    src.sin_port = htons(src_port);
-
-    struct sockaddr_in dst = {0};
-    dst.sin_family = AF_INET;
-    dst.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-    dst.sin_port = htons(dst_port);
-
-    struct odon_conn conn = {0};
-    if (odon_init(&conn, &src, sizeof(src), &dst, sizeof(dst)) < 0)
-    {
-        odon_free(&conn);
-        perror("odon_init");
-        return 1;
-    }
-
-    if (strcmp(arg, "send") == 0)
-    {
+        printf("sending...\n");
         char *buf = "hello world";
         size_t len = strlen(buf);
+
+        struct sockaddr_in src = {0};
+        src.sin_family = AF_INET;
+        src.sin_addr.s_addr = htonl(INADDR_ANY);
+        src.sin_port = htons(52888);
+
+        struct sockaddr_in dst = {0};
+        dst.sin_family = AF_INET;
+        dst.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        dst.sin_port = htons(52887);
+
+        struct odon_conn conn = {0};
+        if (odon_init(&conn, &src, sizeof(src), &dst, sizeof(dst)) < 0)
+        {
+            odon_free(&conn);
+            perror("odon_init");
+            return 1;
+        }
 
         if (odon_send(&conn, buf, len) < 0)
         {
@@ -70,9 +62,29 @@ int main(int argc, char *argv[])
             perror("odon_send");
             return 1;
         }
+        odon_free(&conn);
     }
     else
     {
+        printf("receiving...\n");
+
+        struct sockaddr_in src = {0};
+        src.sin_family = AF_INET;
+        src.sin_addr.s_addr = htonl(INADDR_ANY);
+        src.sin_port = htons(52887);
+
+        struct sockaddr_in dst = {0};
+        dst.sin_family = AF_INET;
+        dst.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        dst.sin_port = htons(52888);
+
+        struct odon_conn conn = {0};
+        if (odon_init(&conn, &src, sizeof(src), &dst, sizeof(dst)) < 0)
+        {
+            odon_free(&conn);
+            perror("odon_init");
+            return 1;
+        }
         char buf[512] = {0};
         if (odon_recv(&conn, buf, 512) < 0)
         {
@@ -81,9 +93,9 @@ int main(int argc, char *argv[])
             return -1;
         }
         printf("recv: %s\n", buf);
+        odon_free(&conn);
     }
 
-    odon_free(&conn);
     return 0;
 }
 
@@ -110,10 +122,12 @@ extern int odon_init(
     return 0;
 }
 
+// extern int odon_send_packet(struct odon_conn *conn, char *buf, size_t len)
+// {
+// }
+
 extern int odon_send(struct odon_conn *conn, char *buf, size_t len)
 {
-
-    int success = 0;
     for (int i = 1; i <= 3; i++)
     {
         if (send(conn->socket, buf, len, 0) < 0)
@@ -125,24 +139,18 @@ extern int odon_send(struct odon_conn *conn, char *buf, size_t len)
         setsockopt(conn->socket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
         char ack[512];
-        int n = recv(conn->socket, ack, 512, 0);
-        if (n >= 0)
+        if (recv(conn->socket, ack, 512, 0) >= 0)
         {
-            success = 1;
             break;
         }
-
-        if (errno == EAGAIN || errno == EWOULDBLOCK)
+        else if (errno == EAGAIN || errno == EWOULDBLOCK)
         {
             continue;
         }
+
         return -1;
     }
 
-    if (!success)
-    {
-        return -1;
-    }
     return 0;
 }
 
