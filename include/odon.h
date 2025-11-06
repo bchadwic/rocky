@@ -13,6 +13,8 @@
 #include <errno.h>
 #include <string.h>
 
+#define PACKET_SIZE 5
+
 struct odon_conn
 {
   int socket;

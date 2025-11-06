@@ -1,7 +1,7 @@
 #include "./include/odon.h"
 
 static int run(int argc, char *argv[]);
-static int send_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst, socklen_t dst_len);
+static int send_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst, socklen_t dst_len, char *filename);
 static int recv_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst, socklen_t dst_len);
 
 int main(int argc, char *argv[])
@@ -18,7 +18,7 @@ int run(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        printf("need 1 arguments\n");
+        printf("need 1 argument\n");
         return 1;
     }
 
@@ -36,34 +36,53 @@ int run(int argc, char *argv[])
 
     if (strcmp(argv[1], "send") == 0)
     {
-        return send_cmd(&a1, sizeof(a1), &a2, sizeof(a2));
+        if (argc < 3)
+        {
+            printf("send needs 2 arguments\n");
+            return 1;
+        }
+        return send_cmd(&a1, sizeof(a1), &a2, sizeof(a2), argv[2]);
     }
     else
     {
         return recv_cmd(&a2, sizeof(a2), &a1, sizeof(a1));
     }
+    return 0;
 }
 
-int send_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst, socklen_t dst_len)
+int send_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst, socklen_t dst_len, char *filename)
 {
+    FILE *fp = fopen(filename, "rb");
+    if (fp == NULL)
+    {
+        return -1;
+    }
+
+    char buf[4096];
+    size_t n = fread(buf, 1, sizeof(buf), fp);
+    if (n == 0)
+    {
+        fclose(fp);
+        return -1;
+    }
 
     printf("sending...\n");
-    char *buf = "hello world";
-    size_t len = strlen(buf);
-
     struct odon_conn conn = {0};
     if (odon_init(&conn, src, src_len, dst, dst_len) < 0)
     {
+        fclose(fp);
         odon_free(&conn);
         return -1;
     }
 
-    if (odon_send(&conn, buf, len) < 0)
+    if (odon_send(&conn, buf, n) < 0)
     {
+        fclose(fp);
         odon_free(&conn);
         return -1;
     }
 
+    fclose(fp);
     odon_free(&conn);
     return 0;
 }
@@ -84,7 +103,6 @@ int recv_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst
         return -1;
     }
 
-    printf("recv: %s\n", buf);
     odon_free(&conn);
     return 0;
 }
