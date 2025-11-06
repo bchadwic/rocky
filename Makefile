@@ -1,44 +1,23 @@
-# Compiler
-CC := gcc
+CC      := gcc
+CFLAGS := -std=c99 -Wall -Wextra -Wpedantic \
+          -Wshadow -Wpointer-arith -Wcast-qual \
+          -Wstrict-prototypes -Wmissing-prototypes \
+          -Wconversion -Wuninitialized -Wunreachable-code \
+          -Wfloat-equal -Wwrite-strings -Wswitch-enum \
+          -Wredundant-decls -Wformat=2 -Wno-discarded-qualifiers
+SRC     := $(wildcard src/*.c)
+OBJ     := $(SRC:.c=.o) main.o
+TARGET  := odon
 
-# Output binary
-TARGET := odon
+.PHONY: all clean
 
-# Source files
-SRCS := main.c
+all: $(TARGET)
 
-# Object files
-OBJS := $(SRCS:.c=.o)
+$(TARGET): $(OBJ)
+	$(CC) $(CFLAGS) -o $@ $^
 
-# Default flags (debug build)
-CFLAGS := -std=c11 -Wall -Wextra -g -O0
-LDFLAGS := -lpthread
-
-# Release flags
-RELEASE_CFLAGS := -std=c11 -Wall -Wextra -O2 -flto -s
-RELEASE_LDFLAGS := -flto -lpthread
-
-# Default target
-all: debug
-
-# Debug build
-debug: CFLAGS += -DDEBUG
-debug: $(TARGET)
-
-# Release build
-release: CFLAGS := $(RELEASE_CFLAGS)
-release: LDFLAGS := $(RELEASE_LDFLAGS)
-release: $(TARGET)
-
-# Link the binary
-$(TARGET): $(OBJS)
-	$(CC) $(OBJS) -o $(TARGET) $(LDFLAGS)
-
-# Compile .c to .o
 %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c -o $@ $<
 
-# Clean build artifacts
-.PHONY: clean
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJ) $(TARGET)
