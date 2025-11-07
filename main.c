@@ -2,7 +2,7 @@
 
 static int run(int argc, char *argv[]);
 static int send_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst, socklen_t dst_len, char *filename);
-static int recv_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst, socklen_t dst_len);
+static int recv_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst, socklen_t dst_len, char *filename);
 
 int main(int argc, char *argv[])
 {
@@ -16,9 +16,9 @@ int main(int argc, char *argv[])
 
 int run(int argc, char *argv[])
 {
-    if (argc < 2)
+    if (argc < 3)
     {
-        printf("need 1 argument\n");
+        printf("need 2 argument\n");
         return 1;
     }
 
@@ -36,33 +36,20 @@ int run(int argc, char *argv[])
 
     if (strcmp(argv[1], "send") == 0)
     {
-        if (argc < 3)
-        {
-            printf("send needs 2 arguments\n");
-            return 1;
-        }
         return send_cmd(&a1, sizeof(a1), &a2, sizeof(a2), argv[2]);
     }
     else
     {
-        return recv_cmd(&a2, sizeof(a2), &a1, sizeof(a1));
+        return recv_cmd(&a2, sizeof(a2), &a1, sizeof(a1), argv[2]);
     }
     return 0;
 }
 
 int send_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst, socklen_t dst_len, char *filename)
 {
-    FILE *fp = fopen(filename, "rb");
-    if (fp == NULL)
+    FILE *input = fopen(filename, "rb");
+    if (input == NULL)
     {
-        return -1;
-    }
-
-    char buf[4096];
-    size_t n = fread(buf, 1, sizeof(buf), fp);
-    if (n == 0)
-    {
-        fclose(fp);
         return -1;
     }
 
@@ -70,39 +57,48 @@ int send_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst
     struct odon_conn conn = {0};
     if (odon_init(&conn, src, src_len, dst, dst_len) < 0)
     {
-        fclose(fp);
+        fclose(input);
         odon_free(&conn);
         return -1;
     }
 
-    if (odon_send(&conn, buf, n) < 0)
+    if (odon_send(&conn, input) < 0)
     {
-        fclose(fp);
+        fclose(input);
         odon_free(&conn);
         return -1;
     }
 
-    fclose(fp);
+    fclose(input);
     odon_free(&conn);
     return 0;
 }
 
-int recv_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst, socklen_t dst_len)
+int recv_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst, socklen_t dst_len, char *filename)
 {
+    FILE *output = fopen(filename, "wb");
+    if (output == NULL)
+    {
+        return -1;
+    }
+
     printf("receiving...\n");
     struct odon_conn conn = {0};
     if (odon_init(&conn, src, src_len, dst, dst_len) < 0)
     {
-        odon_free(&conn);
-        return -1;
-    }
-    char buf[512] = {0};
-    if (odon_recv(&conn, buf, 512) < 0)
-    {
+        fclose(output);
         odon_free(&conn);
         return -1;
     }
 
+    if (odon_recv(&conn, output) < 0)
+    {
+        fclose(output);
+        odon_free(&conn);
+        return -1;
+    }
+
+    fclose(output);
     odon_free(&conn);
     return 0;
 }
