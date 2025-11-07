@@ -13,7 +13,7 @@
 #include <errno.h>
 #include <string.h>
 
-#define PACKET_SIZE 5
+#define PACKET_SIZE 1200
 
 struct odon_conn
 {

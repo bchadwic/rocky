@@ -84,13 +84,8 @@ extern int odon_recv(struct odon_conn *conn, FILE *output)
       break;
     }
 
-    size_t written_len = fwrite(buf, 1, read_len, output);
+    size_t written_len = fwrite(buf, 1, (size_t)read_len, output);
     if (written_len != (size_t)read_len)
-    {
-      return -1;
-    }
-
-    if (fflush(output) < 0)
     {
       return -1;
     }
@@ -100,6 +95,11 @@ extern int odon_recv(struct odon_conn *conn, FILE *output)
     {
       return -1;
     }
+  }
+
+  if (fflush(output) < 0)
+  {
+    return -1;
   }
   return 0;
 }
