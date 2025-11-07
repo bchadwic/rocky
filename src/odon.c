@@ -79,21 +79,41 @@ static int odon_send_packet(struct odon_conn *conn, char *buf, size_t len)
 
 extern int odon_recv(struct odon_conn *conn, char *buf, size_t len)
 {
-  for (int i = 0; i < 20; i++)
+  FILE *output = fopen("output", "wb");
+  if (output == NULL)
   {
-    if (recv(conn->socket, buf, len, 0) < 0)
+    return -1;
+  }
+
+  for (;;)
+  {
+    size_t read_len = (size_t)recv(conn->socket, buf, len, 0);
+    if (read_len <= 0)
     {
+      break;
+    }
+
+    size_t written_len = fwrite(buf, 1, read_len, output);
+    if (written_len != read_len)
+    {
+      fclose(output);
       return -1;
     }
 
-    printf("recv: %s\n", buf);
+    if (fflush(output) < 0)
+    {
+      fclose(output);
+      return -1;
+    }
 
     uint8_t ack[1];
     if (write(conn->socket, ack, 1) < 0)
     {
+      fclose(output);
       return -1;
     }
   }
+  fclose(output);
   return 0;
 }
 
