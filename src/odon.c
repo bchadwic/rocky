@@ -75,7 +75,7 @@ static int odon_send_packet(struct odon_conn *conn, char *buf, size_t len)
 
 extern int odon_recv(struct odon_conn *conn, FILE *output)
 {
-  for (;;)
+  while (1)
   {
     char buf[PACKET_SIZE];
     ssize_t read_len = recv(conn->socket, buf, PACKET_SIZE, 0);
