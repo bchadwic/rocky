@@ -1,0 +1,4 @@
+unordered rules:
+- must use curly braces
+- must use `while(1)` for forever loops
+- must use lowercase commit messages
