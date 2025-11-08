@@ -24,26 +24,22 @@ extern int odon_init(struct odon_conn *conn,
   return 0;
 }
 
-extern int odon_send(struct odon_conn *conn, char *buf, size_t len)
+extern int odon_send(struct odon_conn *conn, FILE *input)
 {
-  size_t offset = 0;
-  while (offset < len)
+  while (1)
   {
     printf("sending packet\n");
-    size_t packet_size = PACKET_SIZE;
-    if (offset + packet_size > len)
+    char buf[PACKET_SIZE];
+    size_t read_len = fread(buf, 1, PACKET_SIZE, input);
+    if (read_len <= 0)
     {
-      packet_size = len - offset;
+      break;
     }
 
-    char b[PACKET_SIZE];
-    memcpy(b, buf + offset, packet_size);
-    if (odon_send_packet(conn, b, packet_size) < 0)
+    if (odon_send_packet(conn, buf, read_len) < 0)
     {
       return -1;
     }
-
-    offset += packet_size;
   }
 
   return 0;
@@ -77,43 +73,34 @@ static int odon_send_packet(struct odon_conn *conn, char *buf, size_t len)
   return 0;
 }
 
-extern int odon_recv(struct odon_conn *conn, char *buf, size_t len)
+extern int odon_recv(struct odon_conn *conn, FILE *output)
 {
-  FILE *output = fopen("output", "wb");
-  if (output == NULL)
+  while (1)
   {
-    return -1;
-  }
-
-  for (;;)
-  {
-    size_t read_len = (size_t)recv(conn->socket, buf, len, 0);
+    char buf[PACKET_SIZE];
+    ssize_t read_len = recv(conn->socket, buf, PACKET_SIZE, 0);
     if (read_len <= 0)
     {
       break;
     }
 
-    size_t written_len = fwrite(buf, 1, read_len, output);
-    if (written_len != read_len)
+    size_t written_len = fwrite(buf, 1, (size_t)read_len, output);
+    if (written_len != (size_t)read_len)
     {
-      fclose(output);
-      return -1;
-    }
-
-    if (fflush(output) < 0)
-    {
-      fclose(output);
       return -1;
     }
 
     uint8_t ack[1];
     if (write(conn->socket, ack, 1) < 0)
     {
-      fclose(output);
       return -1;
     }
   }
-  fclose(output);
+
+  if (fflush(output) < 0)
+  {
+    return -1;
+  }
   return 0;
 }
 
