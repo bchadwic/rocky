@@ -26,7 +26,7 @@ extern int odon_init(struct odon_conn *conn,
 
 extern int odon_send(struct odon_conn *conn, FILE *input)
 {
-  for (;;)
+  while (1)
   {
     printf("sending packet\n");
     char buf[PACKET_SIZE];
