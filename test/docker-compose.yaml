@@ -1,0 +1,75 @@
+version: "3.9"
+
+services:
+  # --- Network A ---
+  router_a:
+    image: alpine
+    container_name: router_a
+    cap_add:
+      - NET_ADMIN
+    command: sh -c "apk add --no-cache iptables && \
+                    iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE && \
+                    tail -f /dev/null"
+    networks:
+      network_a:
+        ipv4_address: 192.168.10.2  # your static IP
+
+
+networks:
+  network_a:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.10.0/24
+  #     wan:
+  #       ipv4_address: 100.43.2.30   # simulated public IP
+
+  # peer_a:
+  #   image: alpine
+  #   container_name: peer_a
+  #   command: tail -f /dev/null
+  #   networks:
+  #     network_a:
+  #       ipv4_address: 10.0.0.12
+
+#   # --- Network B ---
+#   router_b:
+#     image: alpine
+#     container_name: router_b
+#     cap_add:
+#       - NET_ADMIN
+#     command: sh -c "apk add --no-cache iptables && \
+#                     iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE && \
+#                     tail -f /dev/null"
+#     networks:
+#       network_b:
+#         ipv4_address: 192.168.0.1
+#       wan:
+#         ipv4_address: 142.75.8.55   # simulated public IP
+
+#   peer_b:
+#     image: alpine
+#     container_name: peer_b
+#     command: tail -f /dev/null
+#     networks:
+#       network_b:
+#         ipv4_address: 192.168.0.5
+
+# networks:
+#   network_a:
+#     driver: bridge
+#     ipam:
+#       config:
+#         - subnet: 10.0.0.0/24
+
+# #   network_b:
+# #     driver: bridge
+# #     ipam:
+# #       config:
+# #         - subnet: 192.168.0.0/24
+
+#   wan:
+#     driver: bridge
+#     ipam:
+#       config:
+#         - subnet: 100.43.2.0/24
