@@ -8,7 +8,10 @@ int main(int argc, char *argv[])
 {
     if (run(argc, argv) < 0)
     {
-        perror("run");
+        if (errno != 0)
+        {
+            perror("run");
+        }
         return 1;
     }
     return 0;
@@ -18,8 +21,8 @@ int run(int argc, char *argv[])
 {
     if (argc < 3)
     {
-        printf("need 2 argument\n");
-        return 1;
+        fprintf(stderr, "need 2 arguments\n");
+        return -1;
     }
 
     struct sockaddr_in a1 = {

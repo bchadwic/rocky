@@ -1,0 +1,130 @@
+version: "3.9"
+
+services:
+  # peers
+  peer_a1:
+    image: ubuntu:latest
+    container_name: peer_a1
+    tty: true
+    stop_grace_period: 1s
+    volumes:
+      - ../:/usr/local/bin:ro
+    command: >
+      sh -c "
+        ip route del default;
+        ip route add default via 10.0.0.2;
+        sleep infinity
+      "
+    networks:
+      network_a:
+        ipv4_address: 10.0.0.12
+
+  peer_a2:
+    image: ubuntu:latest
+    container_name: peer_a2
+    tty: true
+    stop_grace_period: 1s
+    volumes:
+      - ../:/usr/local/bin:ro
+    command: >
+      sh -c "
+        ip route del default;
+        ip route add default via 10.0.0.2;
+        sleep infinity
+      "
+    networks:
+      network_a:
+        ipv4_address: 10.0.0.13
+
+  peer_b1:
+    image: ubuntu:latest
+    container_name: peer_b1
+    tty: true
+    stop_grace_period: 1s
+    volumes:
+      - ../:/usr/local/bin:ro
+    command: >
+      sh -c "
+        ip route del default;
+        ip route add default via 192.168.0.2;
+        sleep infinity
+      "
+    networks:
+      network_b:
+        ipv4_address: 192.168.0.5
+
+  # routers
+  router_a:
+    image: ubuntu:latest
+    container_name: router_a
+    cap_add:
+      - NET_ADMIN
+    privileged: true
+    tty: true
+    stop_grace_period: 1s
+    command: >
+      sh -c "
+        apk add --no-cache iptables iproute2;
+        echo 1 > /proc/sys/net/ipv4/ip_forward;
+        iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE;
+        sleep infinity
+      "
+    networks:
+      internet:
+        ipv4_address: 100.43.2.30
+      network_a:
+        ipv4_address: 10.0.0.2
+
+  router_b:
+    image: ubuntu:latest
+    container_name: router_b
+    cap_add:
+      - NET_ADMIN
+    privileged: true
+    tty: true
+    stop_grace_period: 1s
+    command: >
+      sh -c "
+        apk add --no-cache iptables iproute2;
+        echo 1 > /proc/sys/net/ipv4/ip_forward;
+        iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE;
+        sleep infinity
+      "
+    networks:
+      internet:
+        ipv4_address: 100.43.2.18
+      network_b:
+        ipv4_address: 192.168.0.2
+
+networks:
+  # local area networks
+  network_a:
+    driver: bridge
+    name: network_a
+    attachable: true
+    internal: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.0.0/24
+
+  network_b:
+    driver: bridge
+    name: network_b
+    attachable: true
+    internal: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.0.0/24
+
+  # wide area network
+  internet:
+    driver: bridge
+    name: internet
+    attachable: true
+    internal: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 100.43.2.16/28
