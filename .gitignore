@@ -2,9 +2,8 @@
 .vscode/**
 
 # compile files
-a.out
 odon
 **.o
 
-# testing files
-test.c
+# test files
+test/test

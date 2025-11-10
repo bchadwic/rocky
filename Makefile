@@ -9,7 +9,7 @@ SRC     := $(wildcard src/*.c)
 OBJ     := $(SRC:.c=.o) main.o
 TARGET  := odon
 
-.PHONY: all clean test
+.PHONY: all clean start-test test end-test
 
 all: $(TARGET)
 
@@ -22,5 +22,5 @@ $(TARGET): $(OBJ)
 clean:
 	rm -f $(OBJ) $(TARGET)
 
-test:
-	cd test ; go build -o run-test && ./run-test
+test: all
+	cd test && go test -v .
