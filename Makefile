@@ -9,7 +9,7 @@ SRC     := $(wildcard src/*.c)
 OBJ     := $(SRC:.c=.o) main.o
 TARGET  := odon
 
-.PHONY: all clean start-test test end-test
+.PHONY: all clean test
 
 all: $(TARGET)
 
