@@ -1,5 +1,5 @@
 #include "./include/odon.h"
-#include "./include/conn.h"
+#include "./include/exch.h"
 
 static int run(int argc, char *argv[]);
 static int send_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst, socklen_t dst_len, char *filename);
@@ -7,8 +7,18 @@ static int recv_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_
 
 int main(int argc, char *argv[])
 {
-    if (host_interfaces() < 0)
-    // if (run(argc, argv) < 0)
+    struct odon_addr_exch *exch = odon_exchaddrs();
+    while (exch)
+    {
+        printf("%s - %s\n", exch->name, exch->ip);
+    }
+
+    if (1)
+    {
+        return 0;
+    }
+
+    if (run(argc, argv) < 0)
     {
         if (errno != 0)
         {
