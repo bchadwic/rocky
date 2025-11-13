@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <net/if.h>
+#include <stdlib.h>
 
 #define MAX_EXCH_DATA_LENGTH 6
 
@@ -20,11 +21,14 @@ enum exch_type
 
 struct odon_addr_exch
 {
+  struct odon_addr_exch *next;
+
   enum exch_type type;
   uint8_t conn_data[MAX_EXCH_DATA_LENGTH];
-  struct odon_addr_exch *next;
 };
 
-extern struct odon_addr_exch *odon_exchaddrs(void);
+extern struct odon_addr_exch *odon_exchaddrs_init(void);
+// should be called after using odon_addr_exch
+extern void odon_exchaddrs_free(struct odon_addr_exch *exch);
 
 #endif

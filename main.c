@@ -1,5 +1,6 @@
 #include "./include/odon.h"
 #include "./include/exch.h"
+#include "./include/fmt.h"
 
 static int run(int argc, char *argv[]);
 static int send_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst, socklen_t dst_len, char *filename);
@@ -7,11 +8,18 @@ static int recv_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_
 
 int main(int argc, char *argv[])
 {
-    struct odon_addr_exch *exch = odon_exchaddrs();
-    while (exch)
+    struct odon_addr_exch *exch = odon_exchaddrs_init();
+    for (struct odon_addr_exch *curr = exch; curr != NULL; curr = curr->next)
     {
-        printf("%s - %s\n", exch->name, exch->ip);
+        char encoded[MAX_EXCH_ENCODED_LENGTH];
+        fmt_conn_base64url(curr->type, curr->conn_data, encoded);
+
+        char plaintext[MAX_EXCH_PLAINTEXT_LENGTH];
+        fmt_conn_plaintext(curr->type, curr->conn_data, plaintext);
+
+        printf("%s - %s\n", encoded, plaintext);
     }
+    odon_exchaddrs_free(exch);
 
     if (1)
     {

@@ -26,7 +26,7 @@ extern int odon_init(struct odon_conn *conn,
                      struct sockaddr_in *dst, socklen_t dst_len);
 extern int odon_send(struct odon_conn *conn, FILE *input);
 extern int odon_recv(struct odon_conn *conn, FILE *output);
-// should be called after every odon_* function that fails
+// should be called after caller is done with odon_conn or if an error occurs
 extern void odon_free(struct odon_conn *conn);
 
 #endif
