@@ -23,4 +23,4 @@ clean:
 	rm -f $(OBJ) $(TARGET)
 
 test: all
-	cd test && go test -v . ; rm test
+	cd test && go test -v .
