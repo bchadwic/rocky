@@ -5,10 +5,8 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"testing"
 
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go/modules/compose"
 )
 
@@ -44,20 +42,4 @@ func teardown(stack *compose.DockerCompose) {
 func parse(output io.Reader) (stdout, stderr bytes.Buffer) {
 	stdcopy.StdCopy(&stdout, &stderr, output)
 	return stdout, stderr
-}
-
-func TestOdon(t *testing.T) {
-	stack, err := construct()
-	assert.NoError(t, err)
-	defer teardown(stack)
-
-	ctx := context.Background()
-	peerA1, err := stack.ServiceContainer(ctx, "peer_a1")
-	assert.NoError(t, err)
-
-	code, output, err := peerA1.Exec(ctx, []string{"sh", "-c", "odon"})
-	_, stderr := parse(output)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, code)
-	assert.Equal(t, "need 2 arguments\n", stderr.String())
 }
