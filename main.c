@@ -1,4 +1,5 @@
 #include "./include/odon.h"
+#include "./include/conn.h"
 
 static int run(int argc, char *argv[]);
 static int send_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst, socklen_t dst_len, char *filename);
@@ -6,7 +7,8 @@ static int recv_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_
 
 int main(int argc, char *argv[])
 {
-    if (run(argc, argv) < 0)
+    if (host_interfaces() < 0)
+    // if (run(argc, argv) < 0)
     {
         if (errno != 0)
         {
