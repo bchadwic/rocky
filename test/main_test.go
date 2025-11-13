@@ -5,12 +5,29 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"testing"
 
 	"github.com/docker/docker/pkg/stdcopy"
-	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go/modules/compose"
 )
+
+// not thread safe
+var stack *compose.DockerCompose
+
+func TestMain(m *testing.M) {
+	var err error
+	stack, err = construct()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "could not construct docker compose environment: %v", err)
+		os.Exit(1)
+	}
+
+	code := m.Run()
+
+	teardown(stack)
+	os.Exit(code)
+}
 
 func construct() (*compose.DockerCompose, error) {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -44,20 +61,4 @@ func teardown(stack *compose.DockerCompose) {
 func parse(output io.Reader) (stdout, stderr bytes.Buffer) {
 	stdcopy.StdCopy(&stdout, &stderr, output)
 	return stdout, stderr
-}
-
-func TestOdon(t *testing.T) {
-	stack, err := construct()
-	assert.NoError(t, err)
-	defer teardown(stack)
-
-	ctx := context.Background()
-	peerA1, err := stack.ServiceContainer(ctx, "peer_a1")
-	assert.NoError(t, err)
-
-	code, output, err := peerA1.Exec(ctx, []string{"sh", "-c", "odon"})
-	_, stderr := parse(output)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, code)
-	assert.Equal(t, "need 2 arguments\n", stderr.String())
 }
