@@ -6,10 +6,9 @@ extern void fmt_conn_base64url(enum exch_type type, uint8_t conn_data[MAX_EXCH_D
 
     uint8_t *p = conn_data;
     int n = (int)type;
-    int i = 0; // conn data index
-    int o = 0; // base64 offset
+    int offset = 0; // base64 offset
 
-    while (i < n)
+    for (int i = 0; i < n; i += 3)
     {
         uint32_t chunk = (uint32_t)(p[i] << 16);
 
@@ -23,21 +22,19 @@ extern void fmt_conn_base64url(enum exch_type type, uint8_t conn_data[MAX_EXCH_D
             chunk |= (uint32_t)(p[i + 2]);
         }
 
-        encoded[o++] = b64[(chunk >> 18) & 0x3F];
-        encoded[o++] = b64[(chunk >> 12) & 0x3F];
+        encoded[offset++] = b64[(chunk >> 18) & 0x3F];
+        encoded[offset++] = b64[(chunk >> 12) & 0x3F];
         if (rem > 1)
         {
-            encoded[o++] = b64[(chunk >> 6) & 0x3F];
+            encoded[offset++] = b64[(chunk >> 6) & 0x3F];
         }
         if (rem > 2)
         {
-            encoded[o++] = b64[chunk & 0x3F];
+            encoded[offset++] = b64[chunk & 0x3F];
         }
-
-        i += 3;
     }
 
-    encoded[o] = '\0';
+    encoded[offset] = '\0';
 }
 
 extern void fmt_conn_plaintext(enum exch_type type, uint8_t conn_data[MAX_EXCH_DATA_LENGTH], char plaintext[MAX_EXCH_PLAINTEXT_LENGTH])
@@ -52,7 +49,6 @@ extern void fmt_conn_plaintext(enum exch_type type, uint8_t conn_data[MAX_EXCH_D
 
     if (type == IPV4_REFLEXIVE)
     {
-
         int port = ((int)p[4] << 8) | p[5];
         snprintf(plaintext, MAX_EXCH_PLAINTEXT_LENGTH, "%u.%u.%u.%u:%u", p[0], p[1], p[2], p[3], port);
         return;
