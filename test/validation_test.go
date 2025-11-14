@@ -21,17 +21,17 @@ func Test_Validation(t *testing.T) {
 		"no args": {
 			cmd:    "odon",
 			code:   1,
-			stderr: "need 2 arguments\n",
+			stderr: "command not provided\n",
 		},
 		"only one arg send": {
 			cmd:    "odon send",
 			code:   1,
-			stderr: "need 2 arguments\n",
+			stderr: "send needs 1 arg\n",
 		},
 		"only one arg recv": {
 			cmd:    "odon recv",
 			code:   1,
-			stderr: "need 2 arguments\n",
+			stderr: "recv needs 1 arg\n",
 		},
 		"not a valid file": {
 			cmd:    "odon send non-existent.txt",
