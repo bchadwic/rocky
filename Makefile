@@ -5,28 +5,47 @@ CFLAGS  := -std=c99 -Wall -Wextra -Wpedantic \
            -Wconversion -Wuninitialized -Wunreachable-code \
            -Wfloat-equal -Wwrite-strings -Wswitch-enum \
            -Wredundant-decls -Wformat=2 -Wno-discarded-qualifiers
+
 SRC     := $(wildcard src/*.c)
-OBJ     := $(SRC:.c=.o) main.o
+OBJ     := $(SRC:.c=.o)
 TARGET  := odon
+LIB     := libodon.a
 
-WIN_CC     := i686-w64-mingw32-gcc
-WIN_CFLAGS := -std=c99 -Wall -O2 -static
-
-.PHONY: all clean test windows
+.PHONY: all clean unit integration
 
 all: $(TARGET)
 
-$(TARGET): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^
+# Build static library from core sources
+$(LIB): $(OBJ)
+	ar rcs $@ $^
 
+# Build main executable using the library
+$(TARGET): $(LIB) main.o
+	$(CC) $(CFLAGS) -o $@ main.o $(LIB)
+
+# Generic object rule
 %.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-windows: $(SRC)
-	$(WIN_CC) $(WIN_CFLAGS) -o $(TARGET).exe $(SRC)
+	$(CC) $(CFLAGS) -Iinclude -c -o $@ $<
 
 clean:
-	rm -f $(OBJ) $(TARGET) $(TARGET).exe
+	rm -f $(OBJ) main.o $(TARGET) $(LIB) $(TEST_BIN)
 
-test: all
-	cd test && go test -v .
+# ---------- Unit testing ----------
+
+TEST_SRC := $(wildcard test/unit/*.c)
+TEST_BIN := $(TEST_SRC:.c=)
+
+unit: $(TEST_BIN)
+	@for t in $(TEST_BIN); do \
+		echo "Running $$t"; \
+		./$$t || exit 1; \
+	done
+
+# Build test executables linking against the core library
+test/unit/%: test/unit/%.c $(LIB)
+	$(CC) $(CFLAGS) -Iinclude -o $@ $< $(LIB)
+
+# ---------- Integration tests (Go) ----------
+
+integration: all
+	cd test/integration && go test -v .
