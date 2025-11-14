@@ -5,27 +5,10 @@
 static int run(int argc, char *argv[]);
 static int send_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst, socklen_t dst_len, char *filename);
 static int recv_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst, socklen_t dst_len, char *filename);
+static int show_cmd(void);
 
 int main(int argc, char *argv[])
 {
-    struct odon_addr_exch *exch = odon_exchaddrs_init();
-    for (struct odon_addr_exch *curr = exch; curr != NULL; curr = curr->next)
-    {
-        char encoded[MAX_EXCH_ENCODED_LENGTH];
-        fmt_conn_base64url(curr->type, curr->conn_data, encoded);
-
-        char plaintext[MAX_EXCH_PLAINTEXT_LENGTH];
-        fmt_conn_plaintext(curr->type, curr->conn_data, plaintext);
-
-        printf("%s - %s\n", encoded, plaintext);
-    }
-    odon_exchaddrs_free(exch);
-
-    if (1)
-    {
-        return 0;
-    }
-
     if (run(argc, argv) < 0)
     {
         if (errno != 0)
@@ -39,9 +22,9 @@ int main(int argc, char *argv[])
 
 int run(int argc, char *argv[])
 {
-    if (argc < 3)
+    if (argc < 2)
     {
-        fprintf(stderr, "need 2 arguments\n");
+        fprintf(stderr, "command not provided\n");
         return -1;
     }
 
@@ -59,11 +42,25 @@ int run(int argc, char *argv[])
 
     if (strcmp(argv[1], "send") == 0)
     {
+        if (argc < 3)
+        {
+            fprintf(stderr, "send needs 1 arg\n");
+            return -1;
+        }
         return send_cmd(&a1, sizeof(a1), &a2, sizeof(a2), argv[2]);
+    }
+    else if (strcmp(argv[1], "recv") == 0)
+    {
+        if (argc < 3)
+        {
+            fprintf(stderr, "recv needs 1 arg\n");
+            return -1;
+        }
+        return recv_cmd(&a2, sizeof(a2), &a1, sizeof(a1), argv[2]);
     }
     else
     {
-        return recv_cmd(&a2, sizeof(a2), &a1, sizeof(a1), argv[2]);
+        return show_cmd();
     }
     return 0;
 }
@@ -123,5 +120,22 @@ int recv_cmd(struct sockaddr_in *src, socklen_t src_len, struct sockaddr_in *dst
 
     fclose(output);
     odon_free(&conn);
+    return 0;
+}
+
+int show_cmd(void)
+{
+    struct odon_addr_exch *exch = odon_exchaddrs_init();
+    for (struct odon_addr_exch *curr = exch; curr != NULL; curr = curr->next)
+    {
+        char encoded[MAX_EXCH_ENCODED_LENGTH];
+        fmt_conn_base64url(curr->type, curr->conn_data, encoded);
+
+        char plaintext[MAX_EXCH_PLAINTEXT_LENGTH];
+        fmt_conn_plaintext(curr->type, curr->conn_data, plaintext);
+
+        printf("%s - %s\n", encoded, plaintext);
+    }
+    odon_exchaddrs_free(exch);
     return 0;
 }
